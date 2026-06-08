@@ -1,0 +1,43 @@
+{
+  "kind": "collectionType",
+  "collectionName": "events",
+  "info": {
+    "displayName": "Events",
+    "singularName": "event",
+    "pluralName": "events"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "action": {
+      "type": "enumeration",
+      "enum": ["page_view", "click", "form_submit", "file_download", "custom"],
+      "required": true
+    },
+    "url": {
+      "type": "string",
+      "required": true
+    },
+    "referrer": {
+      "type": "string",
+      "required": false
+    },
+    "event_model": {
+      "type": "string",
+      "required": false
+    },
+    "event_documentId": {
+      "type": "string",
+      "required": false
+    },
+    "timestamp": {
+      "type": "datetime",
+      "required": true
+    },
+    "metadata": {
+      "type": "json",
+      "required": false
+    }
+  }
+}

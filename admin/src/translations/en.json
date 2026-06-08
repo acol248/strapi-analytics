@@ -1,0 +1,5 @@
+{
+  "plugin.name": "Strapi Analytics",
+  "plugin.description": "A plugin to view analytics data in Strapi",
+  "overview.page-views.title": "Total Page Views"
+}
