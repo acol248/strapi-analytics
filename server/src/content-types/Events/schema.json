@@ -9,10 +9,18 @@
   "options": {
     "draftAndPublish": false
   },
+  "pluginOptions": {
+    "content-type-builder": {
+      "visible": false
+    },
+    "content-manager": {
+      "visible": false
+    }
+  },
   "attributes": {
     "action": {
       "type": "enumeration",
-      "enum": ["page_view", "click", "form_submit", "file_download", "custom"],
+      "enum": ["page_view", "click", "file_download", "custom"],
       "required": true
     },
     "url": {
