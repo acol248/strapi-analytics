@@ -1,7 +1,7 @@
 // Types
 import type { Core } from '@strapi/strapi';
 
-interface TrackEventData {
+export interface TrackEventData {
   event: string;
   url: string;
   referrer: string;
