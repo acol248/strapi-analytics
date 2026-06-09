@@ -1,39 +1,38 @@
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+// Components
+import AreaGraph from '../../components/AreaGraph';
 
 // Hooks
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useTheme } from 'styled-components';
 
 // Helpers
 import { getTranslation } from '../../utils/getTranslation';
 import { getData, padTimeSeries } from '../../helpers';
 
 // Strapi
-import { Main, Box, Typography } from '@strapi/design-system';
 import { Layouts } from '@strapi/strapi/admin';
+import { Main, Box, Typography, IconButton, Checkbox } from '@strapi/design-system';
 import { SingleSelect, SingleSelectOption } from '@strapi/design-system';
+import { SimpleMenu, MenuItem } from '@strapi/design-system';
+import { Flex, Grid } from '@strapi/design-system';
+import { Filter } from '@strapi/icons';
+
+// Styles
+import { StyledOverviewCard } from './Main.style';
 
 // Types
+type Timescale = 'minute' | 'hour' | 'day';
+type EventType = 'page_view' | 'click' | 'file-download' | 'custom';
+
 interface AnalyticsData {
-  action: string;
+  action: EventType | string;
   timestamp: string;
+  [key: string]: any;
 }
 
 // Default quantities for each chart timescale
-const TIME_DEFAULTS = {
-  minute: 60,
-  hour: 24,
-  day: 30,
-};
+const TIME_DEFAULTS = { minute: 60, hour: 24, day: 30 };
+const EVENT_TYPES: EventType[] = ['page_view', 'click', 'file-download', 'custom'];
 
 /**
  * Helper function to format timestamp based on selected timescale
@@ -56,106 +55,172 @@ const scaleFormat = (value: string, scale: 'minute' | 'hour' | 'day') => {
 
 const MainPage = () => {
   const { formatMessage } = useIntl();
-  const theme = useTheme();
 
   const [data, setData] = useState<AnalyticsData[]>([]);
-  const [scale, setScale] = useState<'minute' | 'hour' | 'day'>('hour');
+  const [scale, setScale] = useState<Timescale>('hour');
+  const [selectedGraphs, setSelectedGraphs] = useState<EventType[]>(EVENT_TYPES);
+
+  // Calculate most popular URL
+  const mostPopularUrl = useMemo(() => {
+    if (!data || !Array.isArray(data)) return '';
+
+    const urlCounts: Record<string, number> = {};
+    for (const item of data) {
+      if (item.action === 'page_view' && item.url) {
+        urlCounts[item.url] = (urlCounts[item.url] || 0) + 1;
+      }
+    }
+
+    return Object.entries(urlCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+  }, [data]);
+
+  // Calculate total page views and clicks
+  const totalPageViews = useMemo(() => {
+    if (!data || !Array.isArray(data)) return 0;
+
+    return data.filter((item) => item.action === 'page_view').length;
+  }, [data]);
+
+  // Calculate total clicks
+  const totalClicks = useMemo(() => {
+    if (!data || !Array.isArray(data)) return 0;
+
+    return data.filter((item) => item.action === 'click').length;
+  }, [data]);
 
   // Process data for page views chart
-  const pageViewData = useMemo(() => {
+  const graphs = useMemo(() => {
     if (!data || !Array.isArray(data)) return [];
 
-    // Group data by timescale and count page views
-    const groupedData = data.reduce<Record<string, { timestamp: string; value: number }>>(
-      (acc, item) => {
-        if (item.action !== 'page_view') return acc;
+    const grouped: Record<string, Record<string, { x: string; y: number }>> = {};
 
-        const timescale = scaleFormat(item.timestamp, scale);
+    for (const item of data) {
+      if (!selectedGraphs.includes(item.action as EventType)) continue;
 
-        if (!acc[timescale]) acc[timescale] = { timestamp: item.timestamp, value: 0 };
-        acc[timescale].value += 1;
+      const timescale = scaleFormat(item.timestamp, scale);
 
-        return acc;
-      },
-      {}
-    );
+      grouped[item.action] = grouped[item.action] || {};
+      if (!grouped[item.action][timescale])
+        grouped[item.action][timescale] = { x: item.timestamp, y: 0 };
+      grouped[item.action][timescale].y += 1;
+    }
 
-    return padTimeSeries(Object.values(groupedData), scale, TIME_DEFAULTS[scale], new Date());
-  }, [data, scale]);
+    return selectedGraphs.map((action) => {
+      const values = grouped[action] ? Object.values(grouped[action]) : [];
+      return {
+        action,
+        data: padTimeSeries(values, scale, TIME_DEFAULTS[scale], new Date()),
+      };
+    });
+  }, [data, scale, selectedGraphs]);
+
+  /**
+   * Add/remove target graph from selectedGraphs state
+   * @param graph target graph name
+   */
+  const addRemoveGraph = (graph: EventType) => {
+    setSelectedGraphs((prev) => {
+      if (prev.includes(graph)) return prev.filter((g) => g !== graph);
+      return [...prev, graph];
+    });
+  };
 
   // get data
   useEffect(() => {
-    getData().then(setData).catch(console.error);
+    getData({ type: 'full' }).then(setData).catch(console.error);
   }, []);
 
   return (
-    <Layouts.Root>
+    <>
       <Layouts.Header
-        title={formatMessage({ id: getTranslation('plugin.name') })}
+        title={formatMessage({ id: getTranslation('overview.title') })}
         primaryAction={
-          <SingleSelect value={scale} onChange={(v: 'minute' | 'hour' | 'day') => setScale(v)}>
-            <SingleSelectOption value="minute">Minute</SingleSelectOption>
-            <SingleSelectOption value="hour">Hour</SingleSelectOption>
-            <SingleSelectOption value="day">Day</SingleSelectOption>
-          </SingleSelect>
+          <Flex gap={2}>
+            <SingleSelect size="S" value={scale} onChange={(v) => setScale(v as Timescale)}>
+              <SingleSelectOption value="minute">Minute</SingleSelectOption>
+              <SingleSelectOption value="hour">Hour</SingleSelectOption>
+              <SingleSelectOption value="day">Day</SingleSelectOption>
+            </SingleSelect>
+
+            <SimpleMenu
+              tag={IconButton}
+              icon={<Filter />}
+              label={formatMessage({ id: getTranslation('overview.filters') })}
+              popoverPlacement="bottom-end"
+            >
+              {EVENT_TYPES.map((type) => (
+                <MenuItem key={type} onClick={() => addRemoveGraph(type)}>
+                  <Flex gap={2}>
+                    <Checkbox checked={selectedGraphs.includes(type)} />
+                    <Typography variant="omega">
+                      {formatMessage({
+                        id: getTranslation(`overview.filters.${type.replace('_', '-')}`),
+                      })}
+                    </Typography>
+                  </Flex>
+                </MenuItem>
+              ))}
+            </SimpleMenu>
+          </Flex>
         }
       />
 
       <Layouts.Content>
         <Main>
-          <Box background="neutral0" hasRadius padding={6} shadow="tableShadow">
-            <Box marginBottom={4}>
-              <Typography variant="delta" fontWeight="bold">
-                {formatMessage({ id: getTranslation('overview.page-views.title') })}
-              </Typography>
+          <Grid.Root
+            gap={{
+              large: 5,
+              medium: 2,
+              initial: 1,
+            }}
+            marginBottom={6}
+          >
+            <Grid.Item col={4} s={6} xs={12}>
+              <StyledOverviewCard>
+                <Typography variant="delta" fontWeight="bold" marginBottom={2}>
+                  {formatMessage({ id: getTranslation('overview.total-page-views') })}
+                </Typography>
+                <Typography variant="alpha">{totalPageViews}</Typography>
+              </StyledOverviewCard>
+            </Grid.Item>
+
+            <Grid.Item col={4} s={6} xs={12}>
+              <StyledOverviewCard>
+                <Typography variant="delta" fontWeight="bold" marginBottom={2}>
+                  {formatMessage({ id: getTranslation('overview.most-popular-url') })}
+                </Typography>
+                <Typography variant="alpha">{mostPopularUrl}</Typography>
+              </StyledOverviewCard>
+            </Grid.Item>
+
+            <Grid.Item col={4} s={6} xs={12}>
+              <StyledOverviewCard>
+                <Typography variant="delta" fontWeight="bold" marginBottom={2}>
+                  {formatMessage({ id: getTranslation('overview.total-clicks') })}
+                </Typography>
+                <Typography variant="alpha">{totalClicks}</Typography>
+              </StyledOverviewCard>
+            </Grid.Item>
+          </Grid.Root>
+
+          {graphs.map((g) => (
+            <Box background="neutral0" hasRadius padding={6} marginBottom={6} shadow="tableShadow">
+              <Box marginBottom={4}>
+                <Typography variant="delta" fontWeight="bold">
+                  {formatMessage({
+                    id: getTranslation(`overview.graph.${g.action.replace('_', '-')}.title`),
+                  })}
+                </Typography>
+              </Box>
+
+              <Box key={g.action} width="100%" height="300px" marginBottom={4}>
+                <AreaGraph data={g.data} />
+              </Box>
             </Box>
-
-            <div style={{ width: '100%', height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={pageViewData}
-                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.neutral200} />
-
-                  <XAxis
-                    dataKey="timestamp"
-                    tick={{ fill: theme.colors.neutral600, fontSize: 11 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-
-                  <YAxis
-                    tick={{ fill: theme.colors.neutral600, fontSize: 11 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-
-                  <Tooltip
-                    contentStyle={{
-                      background: theme.colors.neutral0,
-                      border: `1px solid ${theme.colors.neutral200}`,
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                    }}
-                  />
-
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    name="Page Views"
-                    stroke={theme.colors.primary600}
-                    fillOpacity={0.1}
-                    fill={theme.colors.primary600}
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </Box>
+          ))}
         </Main>
       </Layouts.Content>
-    </Layouts.Root>
+    </>
   );
 };
 

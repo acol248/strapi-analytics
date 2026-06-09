@@ -1,8 +1,8 @@
 export type TimeScale = 'minute' | 'hour' | 'day';
 
 export interface TimeSeriesPoint {
-  timestamp: string;
-  value: number;
+  x: number | string;
+  y: number | string;
   [key: string]: any;
 }
 
@@ -27,7 +27,7 @@ export function padTimeSeries<T extends TimeSeriesPoint>(
     maxTime = new Date(anchorTimestamp).getTime();
   } else {
     maxTime =
-      data.length > 0 ? Math.max(...data.map((d) => new Date(d.timestamp).getTime())) : Date.now();
+      data.length > 0 ? Math.max(...data.map((d) => new Date(d.x).getTime())) : Date.now();
   }
 
   const endDate = new Date(maxTime);
@@ -45,7 +45,7 @@ export function padTimeSeries<T extends TimeSeriesPoint>(
   const dataLookup = new Map<string, number>();
 
   for (const item of data) {
-    const itemDate = new Date(item.timestamp);
+    const itemDate = new Date(item.x);
     if (scale === 'day') itemDate.setUTCHours(0, 0, 0, 0);
     else if (scale === 'hour') itemDate.setUTCMinutes(0, 0, 0);
     else if (scale === 'minute') itemDate.setUTCSeconds(0, 0);
@@ -55,7 +55,7 @@ export function padTimeSeries<T extends TimeSeriesPoint>(
     if (itemMs >= startMs && itemMs <= endMs) {
       const bucketKey = itemDate.toISOString();
       const currentVal = dataLookup.get(bucketKey) || 0;
-      dataLookup.set(bucketKey, currentVal + item.value);
+      dataLookup.set(bucketKey, currentVal + (typeof item.y === 'number' ? item.y : 0));
     }
   }
 
@@ -67,8 +67,8 @@ export function padTimeSeries<T extends TimeSeriesPoint>(
     const existingValue = dataLookup.get(currentKey);
 
     paddedResult.push({
-      timestamp: currentKey,
-      value: existingValue !== undefined ? existingValue : 0,
+      x: currentKey,
+      y: existingValue !== undefined ? existingValue : 0,
     });
 
     if (scale === 'day') currentCursor.setUTCDate(currentCursor.getUTCDate() + 1);

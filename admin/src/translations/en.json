@@ -1,5 +1,21 @@
 {
   "plugin.name": "Strapi Analytics",
   "plugin.description": "A plugin to view analytics data in Strapi",
-  "overview.page-views.title": "Total Page Views"
+  "sidebar.item.overview": "Overview",
+  "sidebar.section.content-types": "Content Types",
+  "overview.title": "Overview",
+  "overview.filters": "Filters",
+  "overview.total-page-views": "Total Page Views",
+  "overview.most-popular-url": "Most Popular URL",
+  "overview.total-clicks": "Total Clicks",
+  "overview.filters.page-view": "Page Views",
+  "overview.filters.click": "Clicks",
+  "overview.filters.file-download": "File Downloads",
+  "overview.filters.custom": "Custom Events",
+  "overview.graph.custom": "Custom Events",
+  "overview.graph.page-view.title": "Total Page Views",
+  "overview.graph.click.title": "Total Clicks",
+  "overview.graph.file-download.title": "Total File Downloads",
+  "overview.graph.custom.title": "Total Custom Events",
+  "reports.title": "Reports"
 }

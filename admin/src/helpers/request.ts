@@ -35,3 +35,44 @@ export const getData = async (query: Record<string, any> = {}) => {
   const data = await res.json();
   return data;
 };
+
+/**
+ * Helper function to fetch content types from the backend
+ * @returns list of content types
+ */
+export const getContentTypes = async () => {
+  const token = getToken();
+
+  const res = await fetch(`/content-manager/content-types`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error('Failed to fetch content types.');
+
+  const data = await res.json();
+  return data;
+};
+
+/**
+ * Helper function to fetch a specific content type by UID from the backend
+ * @param uid content type UID
+ * @returns content type data
+ */
+export const getContentType = async (uid: string) => {
+  const token = getToken();
+
+  const res = await fetch(`/content-type-builder/content-types/${uid}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error('Failed to fetch content type.');
+
+  const data = await res.json();
+  return data;
+};

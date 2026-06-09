@@ -16,7 +16,7 @@ const plugin: StrapiApp['appPlugins'][string] = {
         defaultMessage: PLUGIN_ID,
       },
       permissions: [],
-      Component: () => import('./pages/Main'),
+      Component: () => import('./pages/App'),
     });
 
     app.registerPlugin({
