@@ -9,5 +9,21 @@ export default () => ({
         policies: [],
       },
     },
+    {
+      method: 'GET',
+      path: '/code',
+      handler: 'controller.getCode',
+      config: {
+        policies: [],
+      },
+    },
+    {
+      method: 'POST',
+      path: '/generate-code',
+      handler: 'controller.generateCode',
+      config: {
+        policies: [],
+      },
+    },
   ],
 });

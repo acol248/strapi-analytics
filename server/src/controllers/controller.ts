@@ -34,6 +34,44 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
       ctx.throw(500, 'An error occurred while fetching analytics data');
     }
   },
+  /**
+   * Get stored tracking code to be injected into the frontend
+   * @param ctx request context
+   */
+  getCode: async (ctx: any) => {
+    try {
+      const codeEntry = await strapi.documents('plugin::strapi-analytics.code').findFirst();
+
+      ctx.send({ code: codeEntry?.code || null });
+    } catch (error) {
+      ctx.throw(500, 'An error occurred while fetching the code');
+    }
+  },
+  /**
+   * Generate a new code for tracking and store it in the database
+   * @param ctx request context
+   */
+  generateCode: async (ctx: any) => {
+    try {
+      const newCode = `S-${Math.random().toString(36).substr(2, 16).toUpperCase()}`;
+      const existingEntry = await strapi.documents('plugin::strapi-analytics.code').findFirst();
+
+      if (existingEntry) {
+        await strapi.documents('plugin::strapi-analytics.code').update({
+          documentId: existingEntry.documentId,
+          data: { code: newCode } as any,
+        });
+      } else {
+        await strapi.documents('plugin::strapi-analytics.code').create({
+          data: { code: newCode },
+        });
+      }
+
+      ctx.send({ code: newCode });
+    } catch (error) {
+      ctx.throw(500, 'An error occurred while generating the code');
+    }
+  },
 });
 
 export default controller;

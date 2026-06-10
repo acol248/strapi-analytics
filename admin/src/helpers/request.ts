@@ -76,3 +76,43 @@ export const getContentType = async (uid: string) => {
   const data = await res.json();
   return data;
 };
+
+/**
+ * Get the tracking code from the backend
+ * @returns tracking code data
+ */
+export const getCode = async () => {
+  const token = getToken();
+
+  const res = await fetch(`/strapi-analytics/code`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error('Failed to fetch tracking code.');
+
+  const data = await res.json();
+  return data;
+};
+
+/**
+ * Generate a new tracking code and store it in the backend
+ * @returns new tracking code data
+ */
+export const generateCode = async () => {
+  const token = getToken();
+
+  const res = await fetch(`/strapi-analytics/generate-code`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error('Failed to generate tracking code.');
+
+  const data = await res.json();
+  return data;
+};
