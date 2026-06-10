@@ -22,7 +22,7 @@ import { StyledOverviewCard } from './Main.style';
 
 // Types
 type Timescale = 'minute' | 'hour' | 'day';
-type EventType = 'page_view' | 'click' | 'file-download' | 'custom';
+type EventType = 'page_view' | 'click' | 'custom';
 
 interface AnalyticsData {
   action: EventType | string;
@@ -32,7 +32,7 @@ interface AnalyticsData {
 
 // Default quantities for each chart timescale
 const TIME_DEFAULTS = { minute: 60, hour: 24, day: 30 };
-const EVENT_TYPES: EventType[] = ['page_view', 'click', 'file-download', 'custom'];
+const EVENT_TYPES: EventType[] = ['page_view', 'click', 'custom'];
 
 /**
  * Helper function to format timestamp based on selected timescale
