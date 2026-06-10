@@ -57,6 +57,77 @@ const api = ({ strapi }: { strapi: Core.Strapi }) => ({
       ctx.throw(500, 'Internal server error');
     }
   },
+  /**
+   * Serve the tracking script that can be injected into the frontend
+   * @param ctx request context
+   */
+  async trackerScript(ctx: koa.Context) {
+    const serverUrl =
+      strapi.config.get('server.url') || `${ctx.secure ? 'https' : 'http'}://${ctx.host}`;
+
+    const scriptContent = `
+(function() {
+  let siteCode = '';
+  const endpoint = '${serverUrl}/api/strapi-analytics/track'; 
+
+  function sendPayload(eventName, customData = {}, strapiData = null) {
+    if (!siteCode) {
+      console.warn('Strapi Analytics (sana): Missing initialization code.');
+      return;
+    }
+
+    const payload = {
+      code: siteCode,
+      event: eventName,
+      url: window.location.href,
+      host: window.location.host,
+      referrer: document.referrer || 'direct',
+      metadata: customData,
+      timestamp: new Date().toISOString()
+    };
+
+    if (strapiData && (strapiData.uid || strapiData.documentId)) {
+      payload.strapi = {
+        uid: strapiData.uid,
+        documentId: strapiData.documentId
+      };
+    }
+
+    if (navigator.sendBeacon) {
+      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      navigator.sendBeacon(endpoint, blob);
+    } else {
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        keepalive: true
+      }).catch(err => console.error('Strapi Analytics (sana) failure:', err));
+    }
+  }
+
+  function handleCommand(args) {
+    const command = args[0];
+    if (command === 'init') { siteCode = args[1]; }
+    else if (command === 'pageview') { sendPayload('page_view', args[1] || {}); }
+    else if (command === 'track') { sendPayload(args[1], args[2] || {}, args[3] || null); }
+  }
+
+  const globalName = window['StrapiAnalyticsObject']; // Will resolve to 'sana'
+  const placeholderFunction = window[globalName];
+  const queue = placeholderFunction ? placeholderFunction.q : [];
+
+  window[globalName] = function() { handleCommand(arguments); };
+
+  if (Array.isArray(queue)) {
+    queue.forEach(handleCommand);
+  }
+})();
+    `.trim();
+
+    ctx.type = 'application/javascript';
+    ctx.body = scriptContent;
+  },
 });
 
 export default api;
