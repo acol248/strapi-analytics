@@ -5,14 +5,35 @@ import type koa from 'koa';
 const api = ({ strapi }: { strapi: Core.Strapi }) => ({
   /**
    * Track analytics event data
-   * @param ctx koa request context
+   * @param ctx request context
    */
   async track(ctx: koa.Context) {
-    const { body } = ctx.request || {};
+    const { body } = (ctx.request as any) || {};
 
     try {
+      const codeEntry = await strapi.documents('plugin::strapi-analytics.code').findFirst();
+
+      if (!codeEntry?.code) {
+        ctx.throw(401, 'Analytics tracking code has not been set or configured.');
+      }
+
+      const headerCode = ctx.get('X-Analytics-Code');
+      const authHeader = ctx.get('Authorization');
+      const authHeaderCode =
+        typeof authHeader === 'string' && authHeader.toLowerCase().startsWith('bearer ')
+          ? authHeader.slice(7).trim()
+          : '';
+      const bodyCode = body?.code || body?.analyticsCode || body?.strapi?.code;
+      const queryCode = typeof ctx.query?.code === 'string' ? ctx.query.code : undefined;
+
+      const providedCode = headerCode || authHeaderCode || bodyCode || queryCode;
+
+      if (!providedCode || providedCode !== codeEntry?.code) {
+        ctx.throw(401, 'Unauthorized: Invalid or missing tracking code.');
+      }
+
       // if we're specifying a model and document, check they exist before tracking the event
-      if (body.strapi?.uid || body.strapi?.documentId) {
+      if (body && (body.strapi?.uid || body.strapi?.documentId)) {
         const hasModel = strapi.contentTypes[body.strapi.uid];
         const hasDocument = await strapi.documents('plugin::strapi-analytics.event').findFirst({
           filters: { event_documentId: body.strapi.documentId, event_model: body.strapi.uid },
@@ -28,7 +49,10 @@ const api = ({ strapi }: { strapi: Core.Strapi }) => ({
       await strapi.plugin('strapi-analytics').service('analytics').trackEvent(data);
 
       ctx.body = { status: 200, message: 'Analytics data tracked successfully.' };
-    } catch (err) {
+    } catch (err: any) {
+      if (err.status || err.statusCode) {
+        throw err;
+      }
       strapi.log.error('Error tracking analytics data:', err);
       ctx.throw(500, 'Internal server error');
     }
