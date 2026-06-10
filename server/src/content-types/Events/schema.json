@@ -20,7 +20,15 @@
   "attributes": {
     "action": {
       "type": "enumeration",
-      "enum": ["page_view", "click", "file_download", "custom"],
+      "enum": [
+        "page_view",
+        "click",
+        "file_download",
+        "form_submit",
+        "search",
+        "scroll",
+        "custom"
+      ],
       "required": true
     },
     "url": {
