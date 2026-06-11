@@ -60,33 +60,74 @@ const MainPage = () => {
   const [scale, setScale] = useState<Timescale>('hour');
   const [selectedGraphs, setSelectedGraphs] = useState<EventType[]>(EVENT_TYPES);
 
-  // Calculate most popular URL
+  // Calculate most popular URL in given time range
   const mostPopularUrl = useMemo(() => {
     if (!data || !Array.isArray(data)) return '';
 
+    const rangeMs = {
+      minute: TIME_DEFAULTS.minute * 60 * 1000,
+      hour: TIME_DEFAULTS.hour * 60 * 60 * 1000,
+      day: TIME_DEFAULTS.day * 24 * 60 * 60 * 1000,
+    }[scale];
+
+    const now = Date.now();
+
     const urlCounts: Record<string, number> = {};
+
     for (const item of data) {
       if (item.action === 'page_view' && item.url) {
+        const t = Date.parse(item.timestamp);
+        if (Number.isNaN(t) || now - t > rangeMs) continue;
         urlCounts[item.url] = (urlCounts[item.url] || 0) + 1;
       }
     }
 
-    return Object.entries(urlCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
-  }, [data]);
+    return Object.entries(urlCounts).reduce(
+      (max, entry) => {
+        if (entry[1] > max[1]) return entry;
+        return max;
+      },
+      ['', 0]
+    )[0];
+  }, [data, scale]);
 
   // Calculate total page views and clicks
   const totalPageViews = useMemo(() => {
     if (!data || !Array.isArray(data)) return 0;
 
-    return data.filter((item) => item.action === 'page_view').length;
-  }, [data]);
+    const rangeMs = {
+      minute: TIME_DEFAULTS.minute * 60 * 1000,
+      hour: TIME_DEFAULTS.hour * 60 * 60 * 1000,
+      day: TIME_DEFAULTS.day * 24 * 60 * 60 * 1000,
+    }[scale];
+
+    const now = Date.now();
+
+    return data.filter((item) => {
+      if (item.action !== 'page_view') return false;
+      const t = Date.parse(item.timestamp);
+      return !Number.isNaN(t) && now - t <= rangeMs;
+    }).length;
+  }, [data, scale]);
 
   // Calculate total clicks
   const totalClicks = useMemo(() => {
     if (!data || !Array.isArray(data)) return 0;
 
-    return data.filter((item) => item.action === 'click').length;
-  }, [data]);
+    const rangeMs = {
+      minute: TIME_DEFAULTS.minute * 60 * 1000,
+      hour: TIME_DEFAULTS.hour * 60 * 60 * 1000,
+      day: TIME_DEFAULTS.day * 24 * 60 * 60 * 1000,
+    }[scale];
+
+    const now = Date.now();
+
+    return data.filter((item) => {
+      if (item.action !== 'click') return false;
+      const t = Date.parse(item.timestamp);
+      return !Number.isNaN(t) && now - t <= rangeMs;
+    }).length;
+  }, [data, scale]);
 
   // Process data for page views chart
   const graphs = useMemo(() => {
@@ -137,9 +178,24 @@ const MainPage = () => {
         primaryAction={
           <Flex gap={2}>
             <SingleSelect size="S" value={scale} onChange={(v) => setScale(v as Timescale)}>
-              <SingleSelectOption value="minute">Minute</SingleSelectOption>
-              <SingleSelectOption value="hour">Hour</SingleSelectOption>
-              <SingleSelectOption value="day">Day</SingleSelectOption>
+              <SingleSelectOption value="minute">
+                {formatMessage(
+                  { id: getTranslation('overview.time.minute'), defaultMessage: '{value} Minutes' },
+                  { value: TIME_DEFAULTS.minute }
+                )}
+              </SingleSelectOption>
+              <SingleSelectOption value="hour">
+                {formatMessage(
+                  { id: getTranslation('overview.time.hour'), defaultMessage: '{value} Hours' },
+                  { value: TIME_DEFAULTS.hour }
+                )}
+              </SingleSelectOption>
+              <SingleSelectOption value="day">
+                {formatMessage(
+                  { id: getTranslation('overview.time.day'), defaultMessage: '{value} Days' },
+                  { value: TIME_DEFAULTS.day }
+                )}
+              </SingleSelectOption>
             </SingleSelect>
 
             <SimpleMenu
@@ -180,7 +236,9 @@ const MainPage = () => {
                 <Typography variant="delta" fontWeight="bold" marginBottom={2}>
                   {formatMessage({ id: getTranslation('overview.total-page-views') })}
                 </Typography>
-                <Typography variant="alpha">{totalPageViews}</Typography>
+                <Typography className="overview-card__content" variant="alpha">
+                  {totalPageViews || 0}
+                </Typography>
               </StyledOverviewCard>
             </Grid.Item>
 
@@ -189,7 +247,9 @@ const MainPage = () => {
                 <Typography variant="delta" fontWeight="bold" marginBottom={2}>
                   {formatMessage({ id: getTranslation('overview.most-popular-url') })}
                 </Typography>
-                <Typography variant="alpha">{mostPopularUrl}</Typography>
+                <Typography className="overview-card__content" variant="alpha">
+                  {mostPopularUrl || '-'}
+                </Typography>
               </StyledOverviewCard>
             </Grid.Item>
 
@@ -198,7 +258,9 @@ const MainPage = () => {
                 <Typography variant="delta" fontWeight="bold" marginBottom={2}>
                   {formatMessage({ id: getTranslation('overview.total-clicks') })}
                 </Typography>
-                <Typography variant="alpha">{totalClicks}</Typography>
+                <Typography className="overview-card__content" variant="alpha">
+                  {totalClicks || 0}
+                </Typography>
               </StyledOverviewCard>
             </Grid.Item>
           </Grid.Root>

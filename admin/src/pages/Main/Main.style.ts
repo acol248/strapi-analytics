@@ -12,4 +12,10 @@ export const StyledOverviewCard = styled(Flex)`
   border-radius: ${({ theme }) => theme.borderRadius};
   box-shadow: ${({ theme }) => theme.shadows.tableShadow};
   aspect-ratio: 3 / 2;
+
+  & .overview-card__content {
+    word-break: break-all;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
 `;
