@@ -20,7 +20,7 @@ For now, copy plugin files to Strapi plugins folder and add the following to you
 
 ### Adding the tracking script to your website
 
-Paste the following snippet into the <head> of your website's HTML layout. This script initializes the global sa tracker asynchronously, meaning it won't impact your site's loading performance.
+Paste the following snippet into the <head> of your website's HTML layout. This script initializes the global sana tracker asynchronously, meaning it won't impact your site's loading performance.
 
 ```js
 <!-- Strapi Analytics Plugin -->
