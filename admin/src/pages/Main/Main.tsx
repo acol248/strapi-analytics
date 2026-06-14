@@ -6,6 +6,7 @@ import { WidgetGrid, Widget, compactLayout } from '../../components/WidgetGrid';
 // Hooks
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
+import { useParams } from 'react-router-dom';
 import { useTheme } from 'styled-components';
 
 // Helpers
@@ -102,6 +103,7 @@ const TIME_DEFAULTS = { minute: 60, hour: 24, day: 30 };
 
 const MainPage = () => {
   const { formatMessage } = useIntl();
+  const { uid } = useParams();
   const theme = useTheme();
 
   const [data, setData] = useState<AnalyticsData[]>([]);
@@ -177,10 +179,11 @@ const MainPage = () => {
   // Get analytics data
   useEffect(() => {
     const time = `${TIME_DEFAULTS[scale]}${scale[0]}`;
-    getData({ type: 'full' }, time).then(setData).catch(console.error);
-  }, [scale]);
+    const options: Record<string, string | number> = { type: 'full' };
+    if (uid) options.uid = uid;
 
-  console.log('layout', layout);
+    getData(options, time).then(setData).catch(console.error);
+  }, [scale, uid]);
 
   return (
     <>

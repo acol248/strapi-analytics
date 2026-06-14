@@ -9,8 +9,7 @@ import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 // Pages
-import HomePage from './Main';
-import ModelPage from './Model';
+import MainPage from './Main';
 
 // Strapi
 import { Layouts, Page, SubNav } from '@strapi/strapi/admin';
@@ -62,8 +61,8 @@ const App = () => {
       }
     >
       <Routes>
-        <Route index element={<HomePage />} />
-        <Route path="uid/:uid" element={<ModelPage />} />
+        <Route index element={<MainPage />} />
+        <Route path="uid/:uid" element={<MainPage />} />
         <Route path="*" element={<Page.Error />} />
       </Routes>
     </Layouts.Root>
