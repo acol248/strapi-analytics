@@ -281,7 +281,7 @@ const MainPage = () => {
                     .map((d) => ({ x: d.timestamp, y: 1 }));
 
                   const padded = padTimeSeries(rawChartPoints, scale, TIME_DEFAULTS[scale]);
-                  return <AreaGraph data={padded} />;
+                  return <AreaGraph label={w.title} data={padded} />;
                 },
               };
 

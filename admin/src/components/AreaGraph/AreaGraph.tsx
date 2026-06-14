@@ -11,6 +11,7 @@ import {
 // Hooks
 import { useTheme } from 'styled-components';
 import { StyledAreaGraph } from './AreaGraph.style';
+import { Typography } from '@strapi/design-system';
 
 // Types
 export type GraphData = {
@@ -19,14 +20,16 @@ export type GraphData = {
 };
 
 export interface Props {
+  label: string;
   data: GraphData[];
 }
 
-const AreaGraph = ({ data }: Props) => {
+const AreaGraph = ({ label, data }: Props) => {
   const theme = useTheme();
 
   return (
     <StyledAreaGraph>
+      <Typography>{label}</Typography>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.neutral200} />
