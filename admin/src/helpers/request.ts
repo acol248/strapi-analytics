@@ -19,11 +19,11 @@ export const getToken = () => {
  * @param query URL query parameters
  * @returns analytics raw data
  */
-export const getData = async (query: Record<string, any> = {}) => {
+export const getData = async (query: Record<string, any> = {}, last?: string) => {
   const token = getToken();
 
   const queryString = new URLSearchParams(query).toString();
-  const res = await fetch(`/strapi-analytics/data?${queryString}`, {
+  const res = await fetch(`/strapi-analytics/data?${queryString}${last ? `&last=${last}` : ''}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${token}`,

@@ -1,9 +1,12 @@
 // Components
 import AreaGraph from '../../components/AreaGraph';
+import DataCard from '../../components/DataCard';
+import { WidgetGrid, Widget, compactLayout } from '../../components/WidgetGrid';
 
 // Hooks
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
+import { useTheme } from 'styled-components';
 
 // Helpers
 import { getTranslation } from '../../utils/getTranslation';
@@ -11,14 +14,18 @@ import { getData, padTimeSeries } from '../../helpers';
 
 // Strapi
 import { Layouts } from '@strapi/strapi/admin';
-import { Main, Box, Typography, IconButton, Checkbox } from '@strapi/design-system';
+import {
+  Main,
+  Box,
+  Typography,
+  IconButton,
+  Button,
+  SimpleMenu,
+  MenuItem,
+} from '@strapi/design-system';
 import { SingleSelect, SingleSelectOption } from '@strapi/design-system';
-import { SimpleMenu, MenuItem } from '@strapi/design-system';
-import { Flex, Grid } from '@strapi/design-system';
-import { Filter } from '@strapi/icons';
-
-// Styles
-import { StyledOverviewCard } from './Main.style';
+import { Flex } from '@strapi/design-system';
+import { Pencil, Plus, Check } from '@strapi/icons';
 
 // Types
 type Timescale = 'minute' | 'hour' | 'day';
@@ -30,146 +37,150 @@ interface AnalyticsData {
   [key: string]: any;
 }
 
-// Default quantities for each chart timescale
-const TIME_DEFAULTS = { minute: 60, hour: 24, day: 30 };
-const EVENT_TYPES: EventType[] = ['page_view', 'click', 'custom'];
+const LOCAL_STORAGE_KEY = 'strapi-analytics-layout';
 
-/**
- * Helper function to format timestamp based on selected timescale
- * @param value timestamp string
- * @param scale selected timescale ('minute', 'hour', 'day')
- * @returns formatted timestamp string
- */
-const scaleFormat = (value: string, scale: 'minute' | 'hour' | 'day') => {
-  switch (scale) {
-    case 'minute':
-      return value.slice(0, 16).replace('T', ' ');
-    case 'hour':
-      return value.slice(0, 13).replace('T', ' ');
-    case 'day':
-      return value.slice(0, 10);
-    default:
-      return value;
-  }
+const WIDGET_DEFAULTS: Record<string, Partial<Widget> & { title?: string }> = {
+  datacard: { colSpan: 3, rowSpan: 1, title: 'New Metric Card' },
+  chart: { colSpan: 6, rowSpan: 2, title: 'New Chart' },
 };
+
+const DEFAULT_LAYOUT: Widget[] = [
+  {
+    id: '1',
+    type: 'datacard',
+    metric: 'all',
+    title: 'Total Events',
+    colStart: 1,
+    colSpan: 3,
+    rowStart: 1,
+    rowSpan: 1,
+  },
+  {
+    id: '2',
+    type: 'datacard',
+    metric: 'page_view',
+    title: 'Page Views',
+    colStart: 4,
+    colSpan: 3,
+    rowStart: 1,
+    rowSpan: 1,
+  },
+  {
+    id: '3',
+    type: 'datacard',
+    metric: 'click',
+    title: 'Clicks',
+    colStart: 7,
+    colSpan: 3,
+    rowStart: 1,
+    rowSpan: 1,
+  },
+  {
+    id: '4',
+    type: 'datacard',
+    metric: 'form_submit',
+    title: 'Form Submissions',
+    colStart: 10,
+    colSpan: 3,
+    rowStart: 1,
+    rowSpan: 1,
+  },
+];
+
+const METRICS = [
+  { value: 'all', label: 'All Events' },
+  { value: 'page_view', label: 'Page Views' },
+  { value: 'click', label: 'Clicks' },
+  { value: 'file_download', label: 'File Downloads' },
+  { value: 'form_submit', label: 'Form Submissions' },
+  { value: 'search', label: 'Searches' },
+  { value: 'scroll', label: 'Scrolls' },
+  { value: 'custom', label: 'Custom Events' },
+];
+
+const TIME_DEFAULTS = { minute: 60, hour: 24, day: 30 };
 
 const MainPage = () => {
   const { formatMessage } = useIntl();
+  const theme = useTheme();
 
   const [data, setData] = useState<AnalyticsData[]>([]);
-  const [scale, setScale] = useState<Timescale>('hour');
-  const [selectedGraphs, setSelectedGraphs] = useState<EventType[]>(EVENT_TYPES);
-
-  // Calculate most popular URL in given time range
-  const mostPopularUrl = useMemo(() => {
-    if (!data || !Array.isArray(data)) return '';
-
-    const rangeMs = {
-      minute: TIME_DEFAULTS.minute * 60 * 1000,
-      hour: TIME_DEFAULTS.hour * 60 * 60 * 1000,
-      day: TIME_DEFAULTS.day * 24 * 60 * 60 * 1000,
-    }[scale];
-
-    const now = Date.now();
-
-    const urlCounts: Record<string, number> = {};
-
-    for (const item of data) {
-      if (item.action === 'page_view' && item.url) {
-        const t = Date.parse(item.timestamp);
-        if (Number.isNaN(t) || now - t > rangeMs) continue;
-        urlCounts[item.url] = (urlCounts[item.url] || 0) + 1;
+  const [scale, setScale] = useState<Timescale>('day');
+  const [editMode, setEditMode] = useState<boolean>(false);
+  const [layout, setLayout] = useState<Widget[]>(() => {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved layout', e);
       }
     }
 
-    return Object.entries(urlCounts).reduce(
-      (max, entry) => {
-        if (entry[1] > max[1]) return entry;
-        return max;
-      },
-      ['', 0]
-    )[0];
-  }, [data, scale]);
-
-  // Calculate total page views and clicks
-  const totalPageViews = useMemo(() => {
-    if (!data || !Array.isArray(data)) return 0;
-
-    const rangeMs = {
-      minute: TIME_DEFAULTS.minute * 60 * 1000,
-      hour: TIME_DEFAULTS.hour * 60 * 60 * 1000,
-      day: TIME_DEFAULTS.day * 24 * 60 * 60 * 1000,
-    }[scale];
-
-    const now = Date.now();
-
-    return data.filter((item) => {
-      if (item.action !== 'page_view') return false;
-      const t = Date.parse(item.timestamp);
-      return !Number.isNaN(t) && now - t <= rangeMs;
-    }).length;
-  }, [data, scale]);
-
-  // Calculate total clicks
-  const totalClicks = useMemo(() => {
-    if (!data || !Array.isArray(data)) return 0;
-
-    const rangeMs = {
-      minute: TIME_DEFAULTS.minute * 60 * 1000,
-      hour: TIME_DEFAULTS.hour * 60 * 60 * 1000,
-      day: TIME_DEFAULTS.day * 24 * 60 * 60 * 1000,
-    }[scale];
-
-    const now = Date.now();
-
-    return data.filter((item) => {
-      if (item.action !== 'click') return false;
-      const t = Date.parse(item.timestamp);
-      return !Number.isNaN(t) && now - t <= rangeMs;
-    }).length;
-  }, [data, scale]);
-
-  // Process data for page views chart
-  const graphs = useMemo(() => {
-    if (!data || !Array.isArray(data)) return [];
-
-    const grouped: Record<string, Record<string, { x: string; y: number }>> = {};
-
-    for (const item of data) {
-      if (!selectedGraphs.includes(item.action as EventType)) continue;
-
-      const timescale = scaleFormat(item.timestamp, scale);
-
-      grouped[item.action] = grouped[item.action] || {};
-      if (!grouped[item.action][timescale])
-        grouped[item.action][timescale] = { x: item.timestamp, y: 0 };
-      grouped[item.action][timescale].y += 1;
-    }
-
-    return selectedGraphs.map((action) => {
-      const values = grouped[action] ? Object.values(grouped[action]) : [];
-      return {
-        action,
-        data: padTimeSeries(values, scale, TIME_DEFAULTS[scale], new Date()),
-      };
-    });
-  }, [data, scale, selectedGraphs]);
+    return DEFAULT_LAYOUT;
+  });
 
   /**
-   * Add/remove target graph from selectedGraphs state
-   * @param graph target graph name
+   * Update widget in layout by id
+   * @param id target widget to update
+   * @param updates partial updates to apply to the widget
    */
-  const addRemoveGraph = (graph: EventType) => {
-    setSelectedGraphs((prev) => {
-      if (prev.includes(graph)) return prev.filter((g) => g !== graph);
-      return [...prev, graph];
-    });
+  const updateWidget = (id: string, updates: Partial<Widget>) => {
+    setLayout((prev) => prev.map((w) => (w.id === id ? { ...w, ...updates } : w)));
   };
 
-  // get data
+  /**
+   * Remove widget from layout by id
+   * @param id target widget to remove
+   */
+  const deleteWidget = (id: string) => setLayout((prev) => prev.filter((w) => w.id !== id));
+
+  /**
+   * Add a new widget to the layout
+   * @param type widget type to setup
+   */
+  const addWidget = (type?: string) => {
+    const newId = `w-${Date.now()}`;
+    const kind = type || 'datacard';
+    const spec = WIDGET_DEFAULTS[kind] || { colSpan: 3, rowSpan: 1, title: 'New Widget' };
+
+    const newWidget: Widget = {
+      id: newId,
+      type: kind as any,
+      metric: 'all',
+      title: spec.title || 'New Widget',
+      colStart: 1,
+      colSpan: spec.colSpan as number,
+      rowStart: 1,
+      rowSpan: spec.rowSpan as number,
+    };
+
+    setLayout((prev) => compactLayout([...prev, newWidget]));
+  };
+
+  /**
+   * Compute the value for a given metric based on the current data
+   * @param metric metric to compute value for
+   * @returns the count of events for the given metric, or total events if 'all' is selected
+   */
+  const computeMetricValue = (metric: string) => {
+    if (metric === 'all') return data.length;
+
+    return data.filter((item) => item.action === metric).length;
+  };
+
+  // Sync to local storage
   useEffect(() => {
-    getData({ type: 'full' }).then(setData).catch(console.error);
-  }, []);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(layout));
+  }, [layout]);
+
+  // Get analytics data
+  useEffect(() => {
+    const time = `${TIME_DEFAULTS[scale]}${scale[0]}`;
+    getData({ type: 'full' }, time).then(setData).catch(console.error);
+  }, [scale]);
+
+  console.log('layout', layout);
 
   return (
     <>
@@ -198,88 +209,84 @@ const MainPage = () => {
               </SingleSelectOption>
             </SingleSelect>
 
-            <SimpleMenu
-              tag={IconButton}
-              icon={<Filter />}
-              label={formatMessage({ id: getTranslation('overview.filters') })}
-              popoverPlacement="bottom-end"
+            <IconButton
+              label={formatMessage({ id: getTranslation('overview.edit') })}
+              onClick={() => setEditMode((em) => !em)}
             >
-              {EVENT_TYPES.map((type) => (
-                <MenuItem key={type} onClick={() => addRemoveGraph(type)}>
-                  <Flex gap={2}>
-                    <Checkbox checked={selectedGraphs.includes(type)} />
-                    <Typography variant="omega">
-                      {formatMessage({
-                        id: getTranslation(`overview.filters.${type.replace('_', '-')}`),
-                      })}
-                    </Typography>
-                  </Flex>
-                </MenuItem>
-              ))}
-            </SimpleMenu>
+              {editMode ? <Check /> : <Pencil />}
+            </IconButton>
           </Flex>
         }
       />
 
       <Layouts.Content>
         <Main>
-          <Grid.Root
-            gap={{
-              large: 5,
-              medium: 2,
-              initial: 1,
-            }}
-            marginBottom={6}
-          >
-            <Grid.Item col={4} s={6} xs={12}>
-              <StyledOverviewCard>
-                <Typography variant="delta" fontWeight="bold" marginBottom={2}>
-                  {formatMessage({ id: getTranslation('overview.total-page-views') })}
-                </Typography>
-                <Typography className="overview-card__content" variant="alpha">
-                  {totalPageViews || 0}
-                </Typography>
-              </StyledOverviewCard>
-            </Grid.Item>
-
-            <Grid.Item col={4} s={6} xs={12}>
-              <StyledOverviewCard>
-                <Typography variant="delta" fontWeight="bold" marginBottom={2}>
-                  {formatMessage({ id: getTranslation('overview.most-popular-url') })}
-                </Typography>
-                <Typography className="overview-card__content" variant="alpha">
-                  {mostPopularUrl || '-'}
-                </Typography>
-              </StyledOverviewCard>
-            </Grid.Item>
-
-            <Grid.Item col={4} s={6} xs={12}>
-              <StyledOverviewCard>
-                <Typography variant="delta" fontWeight="bold" marginBottom={2}>
-                  {formatMessage({ id: getTranslation('overview.total-clicks') })}
-                </Typography>
-                <Typography className="overview-card__content" variant="alpha">
-                  {totalClicks || 0}
-                </Typography>
-              </StyledOverviewCard>
-            </Grid.Item>
-          </Grid.Root>
-
-          {graphs.map((g) => (
-            <Box background="neutral0" hasRadius padding={6} marginBottom={6} shadow="tableShadow">
-              <Box marginBottom={4}>
+          {editMode && (
+            <Box
+              padding={4}
+              background="neutral0"
+              shadow="tableShadow"
+              hasRadius
+              marginBottom={6}
+              style={{ border: `1.5px dashed ${theme.colors.primary600}` }}
+            >
+              <Flex justifyContent="space-between" alignItems="center">
                 <Typography variant="delta" fontWeight="bold">
-                  {formatMessage({
-                    id: getTranslation(`overview.graph.${g.action.replace('_', '-')}.title`),
-                  })}
+                  Dashboard Editor
                 </Typography>
-              </Box>
+                <Flex gap={2}>
+                  <SimpleMenu
+                    label={formatMessage({ id: getTranslation('overview.add-widget') })}
+                    tag={IconButton}
+                    icon={<Plus />}
+                  >
+                    <MenuItem onSelect={() => addWidget('datacard')}>
+                      {formatMessage({ id: getTranslation('overview.add-widget.data-card') })}
+                    </MenuItem>
+                    <MenuItem onSelect={() => addWidget('chart')}>
+                      {formatMessage({ id: getTranslation('overview.add-widget.chart') })}
+                    </MenuItem>
+                  </SimpleMenu>
 
-              <Box key={g.action} width="100%" height="300px" marginBottom={4}>
-                <AreaGraph data={g.data} />
-              </Box>
+                  <Button variant="tertiary" onClick={() => setLayout(DEFAULT_LAYOUT)}>
+                    Reset to Default Layout
+                  </Button>
+                </Flex>
+              </Flex>
             </Box>
-          ))}
+          )}
+
+          <WidgetGrid
+            layout={layout}
+            onChangeLayout={(l) => {
+              console.log('onChangeLayout', l);
+              setLayout(l);
+            }}
+            editMode={editMode}
+            metrics={METRICS}
+            onUpdateWidget={updateWidget}
+            onDeleteWidget={deleteWidget}
+            renderWidget={(widget) => {
+              const renderers: Record<string, (w: Widget) => JSX.Element | null> = {
+                datacard: (w) => {
+                  const cardValue = computeMetricValue(w.metric);
+                  return <DataCard label={w.title} value={cardValue} />;
+                },
+                chart: (w) => {
+                  const rawChartPoints = data
+                    .filter((item) => item.action === w.metric || w.metric === 'all')
+                    .map((d) => ({ x: d.timestamp, y: 1 }));
+
+                  const padded = padTimeSeries(rawChartPoints, scale, TIME_DEFAULTS[scale]);
+                  return <AreaGraph data={padded} />;
+                },
+              };
+
+              const renderer = renderers[widget.type];
+
+              return renderer ? renderer(widget) : null;
+            }}
+          />
         </Main>
       </Layouts.Content>
     </>
