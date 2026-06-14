@@ -48,6 +48,12 @@ Tracks a standard Page View action (page_view) inside the collection.
 sana('pageview', { customMetadataKey: 'value' });
 ```
 
+Standard Page View tracks can be also include Strapi 
+
+```js
+sana('pageview', { customMetadataKey: 'value' }, { uid: 'api::example.example', documentId: 't0nlv95xugj9f9kl8qcu5grz' });
+```
+
 #### Custom actions
 
 Send custom events (e.g., standard action types configured in the schema like click, file_download, form_submit, search, scroll, or custom).

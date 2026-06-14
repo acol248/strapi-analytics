@@ -1,5 +1,6 @@
 // Types
 import type { Core } from '@strapi/strapi';
+import type { TrackEventData } from 'src/services';
 import type koa from 'koa';
 
 const api = ({ strapi }: { strapi: Core.Strapi }) => ({
@@ -32,6 +33,8 @@ const api = ({ strapi }: { strapi: Core.Strapi }) => ({
         ctx.throw(401, 'Unauthorized: Invalid or missing tracking code.');
       }
 
+      const data: TrackEventData = { ...body, timestamp: new Date() };
+
       // if we're specifying a model and document, check they exist before tracking the event
       if (body && (body.strapi?.uid || body.strapi?.documentId)) {
         const hasModel = strapi.contentTypes[body.strapi.uid];
@@ -39,20 +42,16 @@ const api = ({ strapi }: { strapi: Core.Strapi }) => ({
           filters: { event_documentId: body.strapi.documentId, event_model: body.strapi.uid },
         });
 
-        if (!(body.strapi.uid && hasModel) || !(body.strapi.documentId && hasDocument)) {
-          ctx.throw(404, 'Bad Strapi data.');
-        }
+        if (body.strapi?.uid && !hasModel) ctx.throw(404, 'Bad Strapi data.');
+        else if (body.strapi?.documentId && !hasDocument) ctx.throw(404, 'Bad Strapi data.');
       }
 
-      // track event data
-      const data = { ...body, timestamp: new Date() };
       await strapi.plugin('strapi-analytics').service('analytics').trackEvent(data);
 
       ctx.body = { status: 200, message: 'Analytics data tracked successfully.' };
     } catch (err: any) {
-      if (err.status || err.statusCode) {
-        throw err;
-      }
+      if (err.status || err.statusCode) throw err;
+
       strapi.log.error('Error tracking analytics data:', err);
       ctx.throw(500, 'Internal server error');
     }
@@ -109,7 +108,7 @@ const api = ({ strapi }: { strapi: Core.Strapi }) => ({
   function handleCommand(args) {
     const command = args[0];
     if (command === 'init') { siteCode = args[1]; }
-    else if (command === 'pageview') { sendPayload('page_view', args[1] || {}); }
+    else if (command === 'pageview') { sendPayload('page_view', args[1] || {}, args[2] || null); }
     else if (command === 'track') { sendPayload(args[1], args[2] || {}, args[3] || null); }
   }
 
