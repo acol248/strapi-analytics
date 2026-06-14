@@ -22,7 +22,7 @@ For now, copy plugin files to Strapi plugins folder and add the following to you
 
 Paste the following snippet into the <head> of your website's HTML layout. This script initializes the global sana tracker asynchronously, meaning it won't impact your site's loading performance.
 
-```js
+```html
 <!-- Strapi Analytics Plugin -->
 <script>
   (function(w,d,s,o,g,r,a,m){
@@ -89,9 +89,12 @@ sana(
 
 - [x] ~~Add a token/key requirement to track endpoint that prevents unauthorized access.~~
 - [x] ~~Create copy/paste script that can be added to users websites allowing easy interaction with analytics tracking.~~
-- [ ] Add content type specific dashboards.
-- [ ] Improve customisability of the overview page.
-- [ ] Add drilled down layers that allow for granular tracking - track the CT, the documentId, how data in the document is interacted with.
+- [x] ~~Add content type specific dashboards.~~
+- [x] ~~Make dashboards customisable~~
+- [ ] Add drilled down layers that allow for granular tracking - ~~track the CT, the documentId~~, how data in the document is interacted with.
+- [ ] Add more graph types to dashboards.
+- [ ] Add better time scale adjustments to dashboards.
+- [ ] Add export features.
 - [ ] npm installation method.
 
 Please feel free to suggest further features for the roadmap.
