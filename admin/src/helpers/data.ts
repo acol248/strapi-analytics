@@ -7,6 +7,23 @@ export interface TimeSeriesPoint {
 }
 
 /**
+ * Generate random uuid.
+ * Use crypto.randomUUID() if available, otherwise fallback to custom solution.
+ * @returns string id
+ */
+export const generateId = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  const randomPart = () =>
+    Math.floor((1 + Math.random()) * 0x10000)
+      .toString(16)
+      .substring(1);
+  return `${randomPart()}${randomPart()}-${randomPart()}-${randomPart()}-${randomPart()}-${randomPart()}${randomPart()}${randomPart()}`;
+};
+
+/**
  * Pads a time-series array with zero-valued data points for missing intervals within a strict window.
  * @param data - The array of existing data points.
  * @param scale - The time unit interval ('minute', 'hour', or 'day').
@@ -14,20 +31,19 @@ export interface TimeSeriesPoint {
  * @param anchorTimestamp - Optional. Fixes the end of the time window. Counts backward from here.
  * @returns A continuous, strictly bounded array of data points padded with 0.
  */
-export function padTimeSeries<T extends TimeSeriesPoint>(
+export const padTimeSeries = <T extends TimeSeriesPoint>(
   data: T[],
   scale: TimeScale,
   quantity: number,
   anchorTimestamp?: string | Date
-): TimeSeriesPoint[] {
+): TimeSeriesPoint[] => {
   if (quantity <= 0) return [];
 
   let maxTime: number;
   if (anchorTimestamp) {
     maxTime = new Date(anchorTimestamp).getTime();
   } else {
-    maxTime =
-      data.length > 0 ? Math.max(...data.map((d) => new Date(d.x).getTime())) : Date.now();
+    maxTime = data.length > 0 ? Math.max(...data.map((d) => new Date(d.x).getTime())) : Date.now();
   }
 
   const endDate = new Date(maxTime);
@@ -77,4 +93,4 @@ export function padTimeSeries<T extends TimeSeriesPoint>(
   }
 
   return paddedResult;
-}
+};

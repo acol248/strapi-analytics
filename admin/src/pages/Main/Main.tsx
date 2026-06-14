@@ -1,17 +1,17 @@
 // Components
+import { WidgetGrid, Widget, compactLayout } from '../../components/WidgetGrid';
 import AreaGraph from '../../components/AreaGraph';
 import DataCard from '../../components/DataCard';
-import { WidgetGrid, Widget, compactLayout } from '../../components/WidgetGrid';
 
 // Hooks
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useParams } from 'react-router-dom';
 import { useTheme } from 'styled-components';
 
 // Helpers
 import { getTranslation } from '../../utils/getTranslation';
-import { getData, padTimeSeries } from '../../helpers';
+import { generateId, getData, getUIDName, padTimeSeries } from '../../helpers';
 
 // Strapi
 import { Layouts } from '@strapi/strapi/admin';
@@ -41,50 +41,40 @@ interface AnalyticsData {
 const LOCAL_STORAGE_KEY = 'strapi-analytics-layout';
 
 const WIDGET_DEFAULTS: Record<string, Partial<Widget> & { title?: string }> = {
-  datacard: { colSpan: 3, rowSpan: 1, title: 'New Metric Card' },
-  chart: { colSpan: 6, rowSpan: 2, title: 'New Chart' },
+  datacard: { colSpan: 3, rowSpan: 5, title: 'New Metric Card' },
+  chart: { colSpan: 6, rowSpan: 5, title: 'New Chart' },
 };
 
 const DEFAULT_LAYOUT: Widget[] = [
   {
-    id: '1',
+    id: generateId(),
     type: 'datacard',
     metric: 'all',
     title: 'Total Events',
     colStart: 1,
-    colSpan: 3,
+    colSpan: 6,
     rowStart: 1,
-    rowSpan: 1,
+    rowSpan: 5,
   },
   {
-    id: '2',
+    id: generateId(),
     type: 'datacard',
     metric: 'page_view',
     title: 'Page Views',
-    colStart: 4,
-    colSpan: 3,
-    rowStart: 1,
-    rowSpan: 1,
-  },
-  {
-    id: '3',
-    type: 'datacard',
-    metric: 'click',
-    title: 'Clicks',
     colStart: 7,
-    colSpan: 3,
+    colSpan: 6,
     rowStart: 1,
-    rowSpan: 1,
+    rowSpan: 5,
   },
   {
-    id: '4',
-    type: 'datacard',
-    metric: 'form_submit',
-    title: 'Form Submissions',
-    colStart: 10,
-    colSpan: 3,
-    rowStart: 1,
-    rowSpan: 1,
+    id: generateId(),
+    type: 'chart',
+    metric: 'page_view',
+    title: 'Page Views',
+    colStart: 1,
+    colSpan: 12,
+    rowStart: 6,
+    rowSpan: 8,
   },
 ];
 
@@ -106,20 +96,14 @@ const MainPage = () => {
   const { uid } = useParams();
   const theme = useTheme();
 
+  const [displayName, setDisplayName] = useState<string | undefined>(undefined);
   const [data, setData] = useState<AnalyticsData[]>([]);
   const [scale, setScale] = useState<Timescale>('day');
   const [editMode, setEditMode] = useState<boolean>(false);
   const [layout, setLayout] = useState<Widget[]>(() => {
-    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse saved layout', e);
-      }
-    }
+    const saved = localStorage.getItem(`${uid}:${LOCAL_STORAGE_KEY}`);
 
-    return DEFAULT_LAYOUT;
+    return saved ? JSON.parse(saved) : DEFAULT_LAYOUT;
   });
 
   /**
@@ -127,38 +111,64 @@ const MainPage = () => {
    * @param id target widget to update
    * @param updates partial updates to apply to the widget
    */
-  const updateWidget = (id: string, updates: Partial<Widget>) => {
-    setLayout((prev) => prev.map((w) => (w.id === id ? { ...w, ...updates } : w)));
-  };
+  const updateWidget = useCallback(
+    (id: string, updates: Partial<Widget>) => {
+      setLayout((prev) => {
+        const newLayout = prev.map((w) => (w.id === id ? { ...w, ...updates } : w));
+        localStorage.setItem(`${uid || 'global'}:${LOCAL_STORAGE_KEY}`, JSON.stringify(newLayout));
+
+        return newLayout;
+      });
+    },
+    [layout, uid]
+  );
 
   /**
    * Remove widget from layout by id
    * @param id target widget to remove
    */
-  const deleteWidget = (id: string) => setLayout((prev) => prev.filter((w) => w.id !== id));
+  const deleteWidget = useCallback(
+    (id: string) => {
+      setLayout((prev) => {
+        const newLayout = prev.filter((w) => w.id !== id);
+        localStorage.setItem(`${uid || 'global'}:${LOCAL_STORAGE_KEY}`, JSON.stringify(newLayout));
+
+        return newLayout;
+      });
+    },
+    [layout, uid]
+  );
 
   /**
    * Add a new widget to the layout
    * @param type widget type to setup
    */
-  const addWidget = (type?: string) => {
-    const newId = `w-${Date.now()}`;
-    const kind = type || 'datacard';
-    const spec = WIDGET_DEFAULTS[kind] || { colSpan: 3, rowSpan: 1, title: 'New Widget' };
+  const addWidget = useCallback(
+    (type?: string) => {
+      const newId = generateId();
+      const kind = type || 'datacard';
+      const spec = WIDGET_DEFAULTS[kind] || { colSpan: 3, rowSpan: 1, title: 'New Widget' };
 
-    const newWidget: Widget = {
-      id: newId,
-      type: kind as any,
-      metric: 'all',
-      title: spec.title || 'New Widget',
-      colStart: 1,
-      colSpan: spec.colSpan as number,
-      rowStart: 1,
-      rowSpan: spec.rowSpan as number,
-    };
+      const newWidget: Widget = {
+        id: newId,
+        type: kind as any,
+        metric: 'all',
+        title: spec.title || 'New Widget',
+        colStart: 1,
+        colSpan: spec.colSpan as number,
+        rowStart: 1,
+        rowSpan: spec.rowSpan as number,
+      };
 
-    setLayout((prev) => compactLayout([...prev, newWidget]));
-  };
+      setLayout((prev) => {
+        const newLayout = compactLayout([...prev, newWidget]);
+        localStorage.setItem(`${uid || 'global'}:${LOCAL_STORAGE_KEY}`, JSON.stringify(newLayout));
+
+        return newLayout;
+      });
+    },
+    [layout, uid]
+  );
 
   /**
    * Compute the value for a given metric based on the current data
@@ -171,10 +181,26 @@ const MainPage = () => {
     return data.filter((item) => item.action === metric).length;
   };
 
-  // Sync to local storage
+  // Load layout from local storage on mount
   useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(layout));
-  }, [layout]);
+    const data = localStorage.getItem(`${uid || 'global'}:${LOCAL_STORAGE_KEY}`);
+
+    if (data) {
+      const parsed = JSON.parse(data);
+      if (parsed) setLayout(parsed);
+    } else {
+      setLayout(DEFAULT_LAYOUT);
+    }
+  }, [uid]);
+
+  // Load content type display name if uid is present
+  useEffect(() => {
+    if (!uid) return setDisplayName(undefined);
+
+    getUIDName(uid)
+      .then(({ displayName }) => setDisplayName(displayName))
+      .catch(console.error);
+  }, [uid]);
 
   // Get analytics data
   useEffect(() => {
@@ -188,7 +214,7 @@ const MainPage = () => {
   return (
     <>
       <Layouts.Header
-        title={formatMessage({ id: getTranslation('overview.title') })}
+        title={displayName || formatMessage({ id: getTranslation('overview.title') })}
         primaryAction={
           <Flex gap={2}>
             <SingleSelect size="S" value={scale} onChange={(v) => setScale(v as Timescale)}>
@@ -262,7 +288,7 @@ const MainPage = () => {
           <WidgetGrid
             layout={layout}
             onChangeLayout={(l) => {
-              console.log('onChangeLayout', l);
+              localStorage.setItem(`${uid || 'global'}:${LOCAL_STORAGE_KEY}`, JSON.stringify(l));
               setLayout(l);
             }}
             editMode={editMode}

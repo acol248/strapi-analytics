@@ -99,6 +99,26 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
     }
   },
   /**
+   * Controller to get the display name of a content type by its UID
+   * @param ctx request context
+   */
+  getDisplayName: async (ctx: any) => {
+    const { uid } = ctx.params || {};
+
+    if (!uid) return ctx.throw(400, 'Content type UID is required');
+
+    try {
+      const contentType = strapi.contentTypes[uid];
+      if (!contentType) return ctx.throw(404, 'Content type not found');
+
+      const displayName = contentType.info?.displayName || contentType.modelName || uid;
+
+      ctx.send({ displayName });
+    } catch (error) {
+      ctx.throw(500, 'An error occurred while fetching the content type display name');
+    }
+  },
+  /**
    * Get stored tracking code to be injected into the frontend
    * @param ctx request context
    */

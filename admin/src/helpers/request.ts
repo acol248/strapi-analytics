@@ -64,7 +64,7 @@ export const getContentTypes = async () => {
 export const getContentType = async (uid: string) => {
   const token = getToken();
 
-  const res = await fetch(`/content-type-builder/content-types/${uid}`, {
+  const res = await fetch(`/content-manager/content-types/${uid}/configuration`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -72,6 +72,22 @@ export const getContentType = async (uid: string) => {
   });
 
   if (!res.ok) throw new Error('Failed to fetch content type.');
+
+  const data = await res.json();
+  return data;
+};
+
+export const getUIDName = async (uid: string) => {
+  const token = getToken();
+
+  const res = await fetch(`/strapi-analytics/display-name/${uid}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error('Failed to fetch content type display name.');
 
   const data = await res.json();
   return data;

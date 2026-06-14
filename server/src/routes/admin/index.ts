@@ -11,6 +11,14 @@ export default () => ({
     },
     {
       method: 'GET',
+      path: '/display-name/:uid',
+      handler: 'controller.getDisplayName',
+      config: {
+        policies: [],
+      },
+    },
+    {
+      method: 'GET',
       path: '/code',
       handler: 'controller.getCode',
       config: {
