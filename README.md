@@ -109,7 +109,7 @@ sana(
 - [x] ~~Add content type specific dashboards.~~
 - [x] ~~Make dashboards customisable~~
 - [x] ~~Save dashboard layouts against the user in the database.~~
-- [ ] Ensure RBAC is setup and used appropriately.
+- [x] ~~Ensure RBAC is setup and used appropriately.~~
 - [ ] Add drilled down layers that allow for granular tracking - ~~track the CT, the documentId~~, how data in the document is interacted with.
 - [ ] Add more graph types to dashboards.
 - [x] ~~Add better time scale adjustments to dashboards.~~
