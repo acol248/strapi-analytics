@@ -18,5 +18,6 @@
   "reports.title": "Reports",
   "settings.title": "Settings",
   "settings.code.label": "Tracking Code",
+  "settings.code.hint": "Copy and paste this code into your website's HTML to enable analytics tracking.",
   "settings.generate": "Generate Code"
 }
