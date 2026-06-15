@@ -25,12 +25,25 @@ Paste the following snippet into the <head> of your website's HTML layout. This 
 ```html
 <!-- Strapi Analytics Plugin -->
 <script>
-  (function(w,d,s,o,g,r,a,m){
-    w['StrapiAnalyticsObject']=g;
-    w[g]=w[g]||function(){ (w[g].q=w[g].q||[]).push(arguments) },w[g].l=1*new Date();
-    a=d.createElement(s),m=d.getElementsByTagName(s)[0];
-    a.async=1;a.src=o;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','https://your-strapi-domain.com/api/strapi-analytics/tracker.js','sana');
+  (function (w, d, s, o, g, r, a, m) {
+    w['StrapiAnalyticsObject'] = g;
+    ((w[g] =
+      w[g] ||
+      function () {
+        (w[g].q = w[g].q || []).push(arguments);
+      }),
+      (w[g].l = 1 * new Date()));
+    ((a = d.createElement(s)), (m = d.getElementsByTagName(s)[0]));
+    a.async = 1;
+    a.src = o;
+    m.parentNode.insertBefore(a, m);
+  })(
+    window,
+    document,
+    'script',
+    'https://your-strapi-domain.com/api/strapi-analytics/tracker.js',
+    'sana'
+  );
 
   sana('init', 'S-XXXXXXXXXXX'); // replace this with a code generated in your CMS
   sana('pageview');
@@ -48,10 +61,14 @@ Tracks a standard Page View action (page_view) inside the collection.
 sana('pageview', { customMetadataKey: 'value' });
 ```
 
-Standard Page View tracks can be also include Strapi 
+Standard Page View tracks can be also include Strapi
 
 ```js
-sana('pageview', { customMetadataKey: 'value' }, { uid: 'api::example.example', documentId: 't0nlv95xugj9f9kl8qcu5grz' });
+sana(
+  'pageview',
+  { customMetadataKey: 'value' },
+  { uid: 'api::example.example', documentId: 't0nlv95xugj9f9kl8qcu5grz' }
+);
 ```
 
 #### Custom actions
@@ -91,9 +108,11 @@ sana(
 - [x] ~~Create copy/paste script that can be added to users websites allowing easy interaction with analytics tracking.~~
 - [x] ~~Add content type specific dashboards.~~
 - [x] ~~Make dashboards customisable~~
+- [x] ~~Save dashboard layouts against the user in the database.~~
+- [ ] Ensure RBAC is setup and used appropriately.
 - [ ] Add drilled down layers that allow for granular tracking - ~~track the CT, the documentId~~, how data in the document is interacted with.
 - [ ] Add more graph types to dashboards.
-- [ ] Add better time scale adjustments to dashboards.
+- [x] ~~Add better time scale adjustments to dashboards.~~
 - [ ] Add export features.
 - [ ] npm installation method.
 
