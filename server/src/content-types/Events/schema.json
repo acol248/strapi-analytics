@@ -1,6 +1,6 @@
 {
   "kind": "collectionType",
-  "collectionName": "events",
+  "collectionName": "strapi_analytics_events",
   "info": {
     "displayName": "Events",
     "singularName": "event",

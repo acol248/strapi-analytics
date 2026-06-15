@@ -1,6 +1,6 @@
 {
   "kind": "singleType",
-  "collectionName": "codes",
+  "collectionName": "strapi_analytics_codes",
   "info": {
     "singularName": "code",
     "pluralName": "codes",
