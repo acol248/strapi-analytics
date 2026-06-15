@@ -11,7 +11,16 @@ import { useTheme } from 'styled-components';
 
 // Helpers
 import { getTranslation } from '../../utils/getTranslation';
-import { generateId, getData, getUIDName, padTimeSeries } from '../../helpers';
+import {
+  generateId,
+  getData,
+  getUIDName,
+  padTimeSeries,
+  startTime,
+  endTime,
+  deriveScale,
+} from '../../helpers';
+import { getLayouts, saveLayout } from '../../helpers/request';
 
 // Strapi
 import { Layouts } from '@strapi/strapi/admin';
@@ -23,13 +32,12 @@ import {
   Button,
   SimpleMenu,
   MenuItem,
+  DatePicker,
 } from '@strapi/design-system';
-import { SingleSelect, SingleSelectOption } from '@strapi/design-system';
 import { Flex } from '@strapi/design-system';
-import { Pencil, Plus, Check } from '@strapi/icons';
+import { Pencil, Plus, Check, Clock } from '@strapi/icons';
 
 // Types
-type Timescale = 'minute' | 'hour' | 'day';
 type EventType = 'page_view' | 'click' | 'custom';
 
 interface AnalyticsData {
@@ -89,8 +97,6 @@ const METRICS = [
   { value: 'custom', label: 'Custom Events' },
 ];
 
-const TIME_DEFAULTS = { minute: 60, hour: 24, day: 30 };
-
 const MainPage = () => {
   const { formatMessage } = useIntl();
   const { uid } = useParams();
@@ -98,13 +104,10 @@ const MainPage = () => {
 
   const [displayName, setDisplayName] = useState<string | undefined>(undefined);
   const [data, setData] = useState<AnalyticsData[]>([]);
-  const [scale, setScale] = useState<Timescale>('day');
+  const [startDate, setStartDate] = useState<Date>(new Date(Date.now() - 7 * 864e5));
+  const [endDate, setEndDate] = useState<Date>(new Date());
   const [editMode, setEditMode] = useState<boolean>(false);
-  const [layout, setLayout] = useState<Widget[]>(() => {
-    const saved = localStorage.getItem(`${uid}:${LOCAL_STORAGE_KEY}`);
-
-    return saved ? JSON.parse(saved) : DEFAULT_LAYOUT;
-  });
+  const [layout, setLayout] = useState<Widget[]>(DEFAULT_LAYOUT);
 
   /**
    * Update widget in layout by id
@@ -115,7 +118,8 @@ const MainPage = () => {
     (id: string, updates: Partial<Widget>) => {
       setLayout((prev) => {
         const newLayout = prev.map((w) => (w.id === id ? { ...w, ...updates } : w));
-        localStorage.setItem(`${uid || 'global'}:${LOCAL_STORAGE_KEY}`, JSON.stringify(newLayout));
+        // optimistic save
+        saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: newLayout }).catch(console.error);
 
         return newLayout;
       });
@@ -131,7 +135,7 @@ const MainPage = () => {
     (id: string) => {
       setLayout((prev) => {
         const newLayout = prev.filter((w) => w.id !== id);
-        localStorage.setItem(`${uid || 'global'}:${LOCAL_STORAGE_KEY}`, JSON.stringify(newLayout));
+        saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: newLayout }).catch(console.error);
 
         return newLayout;
       });
@@ -162,7 +166,7 @@ const MainPage = () => {
 
       setLayout((prev) => {
         const newLayout = compactLayout([...prev, newWidget]);
-        localStorage.setItem(`${uid || 'global'}:${LOCAL_STORAGE_KEY}`, JSON.stringify(newLayout));
+        saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: newLayout }).catch(console.error);
 
         return newLayout;
       });
@@ -181,16 +185,27 @@ const MainPage = () => {
     return data.filter((item) => item.action === metric).length;
   };
 
-  // Load layout from local storage on mount
+  // Load layout from backend on mount
   useEffect(() => {
-    const data = localStorage.getItem(`${uid || 'global'}:${LOCAL_STORAGE_KEY}`);
+    let mounted = true;
 
-    if (data) {
-      const parsed = JSON.parse(data);
-      if (parsed) setLayout(parsed);
-    } else {
-      setLayout(DEFAULT_LAYOUT);
-    }
+    getLayouts({ isGlobal: !uid, modelUid: uid || undefined })
+      .then((res) => {
+        if (!mounted) return;
+        if (Array.isArray(res) && res.length > 0) {
+          // prefer first matching layout
+          setLayout(res[0].layout || DEFAULT_LAYOUT);
+        } else {
+          setLayout(DEFAULT_LAYOUT);
+        }
+      })
+      .catch(() => {
+        setLayout(DEFAULT_LAYOUT);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, [uid]);
 
   // Load content type display name if uid is present
@@ -204,42 +219,37 @@ const MainPage = () => {
 
   // Get analytics data
   useEffect(() => {
-    const time = `${TIME_DEFAULTS[scale]}${scale[0]}`;
     const options: Record<string, string | number> = { type: 'full' };
     if (uid) options.uid = uid;
 
-    getData(options, time).then(setData).catch(console.error);
-  }, [scale, uid]);
+    getData(options, startDate, endDate).then(setData).catch(console.error);
+  }, [uid, startDate, endDate]);
 
   return (
     <>
       <Layouts.Header
-        title={displayName || formatMessage({ id: getTranslation('overview.title') })}
+        title={displayName || formatMessage({ id: getTranslation('dashboard.title') })}
         primaryAction={
           <Flex gap={2}>
-            <SingleSelect size="S" value={scale} onChange={(v) => setScale(v as Timescale)}>
-              <SingleSelectOption value="minute">
-                {formatMessage(
-                  { id: getTranslation('overview.time.minute'), defaultMessage: '{value} Minutes' },
-                  { value: TIME_DEFAULTS.minute }
-                )}
-              </SingleSelectOption>
-              <SingleSelectOption value="hour">
-                {formatMessage(
-                  { id: getTranslation('overview.time.hour'), defaultMessage: '{value} Hours' },
-                  { value: TIME_DEFAULTS.hour }
-                )}
-              </SingleSelectOption>
-              <SingleSelectOption value="day">
-                {formatMessage(
-                  { id: getTranslation('overview.time.day'), defaultMessage: '{value} Days' },
-                  { value: TIME_DEFAULTS.day }
-                )}
-              </SingleSelectOption>
-            </SingleSelect>
+            <Flex gap={1} maxWidth="300px" alignItems="center">
+              <DatePicker
+                size="S"
+                initialDate={startDate}
+                maxDate={endDate}
+                onChange={(d) => d && setStartDate(d)}
+              />
+              <span>-</span>
+              <DatePicker
+                size="S"
+                initialDate={endDate}
+                minDate={startDate}
+                maxDate={new Date()}
+                onChange={(d) => d && setEndDate(d)}
+              />
+            </Flex>
 
             <IconButton
-              label={formatMessage({ id: getTranslation('overview.edit') })}
+              label={formatMessage({ id: getTranslation('dashboard.edit') })}
               onClick={() => setEditMode((em) => !em)}
             >
               {editMode ? <Check /> : <Pencil />}
@@ -265,15 +275,15 @@ const MainPage = () => {
                 </Typography>
                 <Flex gap={2}>
                   <SimpleMenu
-                    label={formatMessage({ id: getTranslation('overview.add-widget') })}
+                    label={formatMessage({ id: getTranslation('dashboard.add-widget') })}
                     tag={IconButton}
                     icon={<Plus />}
                   >
                     <MenuItem onSelect={() => addWidget('datacard')}>
-                      {formatMessage({ id: getTranslation('overview.add-widget.data-card') })}
+                      {formatMessage({ id: getTranslation('dashboard.add-widget.data-card') })}
                     </MenuItem>
                     <MenuItem onSelect={() => addWidget('chart')}>
-                      {formatMessage({ id: getTranslation('overview.add-widget.chart') })}
+                      {formatMessage({ id: getTranslation('dashboard.add-widget.chart') })}
                     </MenuItem>
                   </SimpleMenu>
 
@@ -285,11 +295,11 @@ const MainPage = () => {
             </Box>
           )}
 
-          <WidgetGrid
+            <WidgetGrid
             layout={layout}
             onChangeLayout={(l) => {
-              localStorage.setItem(`${uid || 'global'}:${LOCAL_STORAGE_KEY}`, JSON.stringify(l));
               setLayout(l);
+              saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: l }).catch(console.error);
             }}
             editMode={editMode}
             metrics={METRICS}
@@ -306,7 +316,11 @@ const MainPage = () => {
                     .filter((item) => item.action === w.metric || w.metric === 'all')
                     .map((d) => ({ x: d.timestamp, y: 1 }));
 
-                  const padded = padTimeSeries(rawChartPoints, scale, TIME_DEFAULTS[scale]);
+                  const usedScale = deriveScale(startDate, endDate);
+                  const quantity = startTime(usedScale, startDate, endDate);
+                  const anchor = endTime(usedScale, endDate);
+                  const padded = padTimeSeries(rawChartPoints, usedScale, quantity, anchor);
+
                   return <AreaGraph label={w.title} data={padded} />;
                 },
               };

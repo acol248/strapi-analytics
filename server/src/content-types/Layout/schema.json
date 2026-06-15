@@ -1,0 +1,38 @@
+{
+  "kind": "singleType",
+  "collectionName": "strapi_analytics_layouts",
+  "info": {
+    "singularName": "layout",
+    "pluralName": "layouts",
+    "displayName": "Layout",
+    "description": "Stores admin layout configurations per user and optionally per content-type"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "content-type-builder": {
+      "visible": false
+    },
+    "content-manager": {
+      "visible": false
+    }
+  },
+  "attributes": {
+    "userId": {
+      "type": "integer",
+      "required": true
+    },
+    "isGlobal": {
+      "type": "boolean",
+      "default": false
+    },
+    "modelUid": {
+      "type": "string"
+    },
+    "layout": {
+      "type": "json",
+      "required": true
+    }
+  }
+}

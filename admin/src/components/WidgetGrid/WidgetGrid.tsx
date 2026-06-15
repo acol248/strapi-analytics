@@ -400,7 +400,7 @@ export const WidgetGrid = ({
                 <Popover.Root>
                   <Popover.Trigger>
                     <IconButton
-                      label={formatMessage({ id: getTranslation('overview.widget-configuration') })}
+                      label={formatMessage({ id: getTranslation('components.widget-grid.widget-configuration') })}
                     >
                       <Cog />
                     </IconButton>
@@ -421,13 +421,13 @@ export const WidgetGrid = ({
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Typography variant="delta" fontWeight="bold" textColor="neutral800">
-                          {formatMessage({ id: getTranslation('overview.widget-configuration') })}
+                          {formatMessage({ id: getTranslation('components.widget-grid.widget-configuration') })}
                         </Typography>
 
                         <Field.Root>
                           <Field.Label>
                             <Typography variant="pi" fontWeight="bold">
-                              {formatMessage({ id: getTranslation('overview.widget-title') })}
+                              {formatMessage({ id: getTranslation('components.widget-grid.widget-title') })}
                             </Typography>
                           </Field.Label>
                           <Field.Input
@@ -442,7 +442,7 @@ export const WidgetGrid = ({
                         <Field.Root>
                           <Field.Label>
                             <Typography variant="pi" fontWeight="bold">
-                              {formatMessage({ id: getTranslation('overview.widget-metric') })}
+                              {formatMessage({ id: getTranslation('components.widget-grid.widget-metric') })}
                             </Typography>
                           </Field.Label>
                           <SingleSelect

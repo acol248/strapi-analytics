@@ -19,16 +19,19 @@ export const getToken = () => {
  * @param query URL query parameters
  * @returns analytics raw data
  */
-export const getData = async (query: Record<string, any> = {}, last?: string) => {
+export const getData = async (query: Record<string, any> = {}, start?: Date, end?: Date) => {
   const token = getToken();
 
   const queryString = new URLSearchParams(query).toString();
-  const res = await fetch(`/strapi-analytics/data?${queryString}${last ? `&last=${last}` : ''}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const res = await fetch(
+    `/strapi-analytics/data?${queryString}${start ? `&start=${start.toISOString()}` : ''}${end ? `&end=${end.toISOString()}` : ''}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
   if (!res.ok) throw new Error('Failed to fetch analytics data.');
 
@@ -128,6 +131,52 @@ export const generateCode = async () => {
   });
 
   if (!res.ok) throw new Error('Failed to generate tracking code.');
+
+  const data = await res.json();
+  return data;
+};
+
+/**
+ * Save a layout for the current admin user (or global if modelUid omitted)
+ * @param payload { isGlobal?: boolean, modelUid?: string, layout: any }
+ */
+export const saveLayout = async (payload: { isGlobal?: boolean; modelUid?: string; layout: any }) => {
+  const token = getToken();
+
+  const res = await fetch(`/strapi-analytics/layouts`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) throw new Error('Failed to save layout.');
+
+  const data = await res.json();
+  return data;
+};
+
+/**
+ * Get layouts for the current admin user (or global/all if query provided)
+ * @param query { isGlobal?: boolean, modelUid?: string }
+ */
+export const getLayouts = async (query: { isGlobal?: boolean; modelUid?: string } = {}) => {
+  const token = getToken();
+
+  const params = new URLSearchParams();
+  if (query.isGlobal !== undefined) params.append('isGlobal', String(query.isGlobal));
+  if (query.modelUid) params.append('modelUid', query.modelUid);
+
+  const res = await fetch(`/strapi-analytics/layouts?${params.toString()}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error('Failed to fetch layouts.');
 
   const data = await res.json();
   return data;

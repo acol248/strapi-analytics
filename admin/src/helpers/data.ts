@@ -94,3 +94,51 @@ export const padTimeSeries = <T extends TimeSeriesPoint>(
 
   return paddedResult;
 };
+
+/**
+ * Compute the number of intervals between two dates (inclusive) for a given scale.
+ * @param scale - The time unit interval ('minute', 'hour', or 'day').
+ * @param start - The start date.
+ * @param end - The end date.
+ * @returns The number of intervals between the two dates (inclusive).
+ */
+export const startTime = (scale: TimeScale, start: Date, end: Date): number => {
+  const diff = end.getTime() - start.getTime();
+
+  if (scale === 'day') return Math.floor(diff / 864e5) + 1;
+
+  if (scale === 'hour') return Math.floor(diff / 36e5) + 1;
+
+  return Math.floor(diff / 6e4) + 1;
+};
+
+/**
+ * Normalize an end `Date` to the provided scale (used as anchor timestamp).
+ * @param scale - The time unit interval ('minute', 'hour', or 'day').
+ * @param end - The end date.
+ * @returns A new `Date` object normalized to the specified scale.
+ */
+export const endTime = (scale: TimeScale, end: Date): Date => {
+  const d = new Date(end);
+  if (scale === 'day') d.setUTCHours(0, 0, 0, 0);
+  else if (scale === 'hour') d.setUTCMinutes(0, 0, 0);
+  else if (scale === 'minute') d.setUTCSeconds(0, 0);
+  return d;
+};
+
+/**
+ * Derive the appropriate time scale based on the difference between two dates.
+ * @param start - The start date.
+ * @param end - The end date.
+ * @returns The derived time scale ('minute', 'hour', or 'day').
+ */
+export const deriveScale = (start: Date, end: Date): TimeScale => {
+  const diffMs = end.getTime() - start.getTime();
+  const diffMinutes = diffMs / 6e4;
+
+  if (diffMinutes >= 60 * 48) return 'day';
+
+  if (diffMinutes >= 120) return 'hour';
+
+  return 'minute';
+};

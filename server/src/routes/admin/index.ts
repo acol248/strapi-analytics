@@ -33,5 +33,21 @@ export default () => ({
         policies: [],
       },
     },
+    {
+      method: 'POST',
+      path: '/layouts',
+      handler: 'controller.saveLayout',
+      config: {
+        policies: [],
+      },
+    },
+    {
+      method: 'GET',
+      path: '/layouts',
+      handler: 'controller.getLayouts',
+      config: {
+        policies: [],
+      },
+    },
   ],
 });

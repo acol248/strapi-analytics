@@ -1,4 +1,5 @@
 import type { Core } from '@strapi/strapi';
+import type koa from 'koa';
 
 const TYPE_FULL = ['action', 'timestamp', 'url', 'event_documentId', 'event_model', 'metadata'];
 const TYPE_MINIMAL = ['action', 'timestamp'];
@@ -45,7 +46,7 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
    * Controller to get analytics data
    * @param ctx request context
    */
-  getAnalyticsData: async (ctx: any) => {
+  getAnalyticsData: async (ctx: koa.Context & { request: { query: Record<string, any> } }) => {
     const { query } = ctx.request || {};
 
     try {
@@ -102,7 +103,7 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
    * Controller to get the display name of a content type by its UID
    * @param ctx request context
    */
-  getDisplayName: async (ctx: any) => {
+  getDisplayName: async (ctx: koa.Context) => {
     const { uid } = ctx.params || {};
 
     if (!uid) return ctx.throw(400, 'Content type UID is required');
@@ -122,7 +123,7 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
    * Get stored tracking code to be injected into the frontend
    * @param ctx request context
    */
-  getCode: async (ctx: any) => {
+  getCode: async (ctx: koa.Context) => {
     try {
       const codeEntry = await strapi.documents('plugin::strapi-analytics.code').findFirst();
 
@@ -135,7 +136,7 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
    * Generate a new code for tracking and store it in the database
    * @param ctx request context
    */
-  generateCode: async (ctx: any) => {
+  generateCode: async (ctx: koa.Context) => {
     try {
       const newCode = `S-${Math.random().toString(36).substr(2, 16).toUpperCase()}`;
       const existingEntry = await strapi.documents('plugin::strapi-analytics.code').findFirst();
@@ -154,6 +155,64 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
       ctx.send({ code: newCode });
     } catch (error) {
       ctx.throw(500, 'An error occurred while generating the code');
+    }
+  },
+  /**
+   * Save a layout for the current admin user
+   * @param ctx request context
+   */
+  saveLayout: async (ctx: koa.Context) => {
+    try {
+      const { body } = ctx.request || {};
+      const user = ctx.state.user || {};
+      const userId = user.id;
+
+      if (!userId) return ctx.throw(401, 'Unauthorized');
+
+      const { isGlobal = false, modelUid, layout } = body || {};
+      if (!layout) return ctx.throw(400, 'layout is required');
+
+      const result = await strapi.plugin('strapi-analytics').service('layouts').saveLayout({
+        userId,
+        isGlobal,
+        modelUid,
+        layout,
+      });
+
+      ctx.send(result);
+    } catch (err) {
+      ctx.throw(500, 'An error occurred while saving the layout');
+    }
+  },
+  /**
+   * Get layouts for the current admin user (or all if admin requests)
+   * @param ctx request context
+   */
+  getLayouts: async (ctx: koa.Context) => {
+    try {
+      const { query } = ctx.request || {};
+      const user = ctx.state.user || {};
+      const userId = user.id;
+
+      const { isGlobal, modelUid, forUserId } = query || {};
+
+      // Allow admins to request other users' layouts via forUserId, otherwise use current user
+      const targetUserId = forUserId ? Number(forUserId) : userId;
+
+      const parsedIsGlobal =
+        isGlobal === undefined || isGlobal === ''
+          ? undefined
+          : isGlobal === 'true' || isGlobal === true;
+
+      const results = await strapi.plugin('strapi-analytics').service('layouts').getLayouts({
+        userId: targetUserId,
+        isGlobal: parsedIsGlobal,
+        modelUid,
+      });
+
+      ctx.send(results);
+    } catch (err) {
+      ctx.throw(500, 'An error occurred while fetching layouts');
     }
   },
 });
