@@ -3,6 +3,9 @@ import { PLUGIN_ID } from './pluginId';
 import { Initializer } from './components/Initializer';
 import { PluginIcon } from './components/PluginIcon';
 
+// Permissions
+import pluginPermissions from './permissions';
+
 // Types
 import type { StrapiApp } from '@strapi/strapi/admin';
 
@@ -15,7 +18,7 @@ const plugin: StrapiApp['appPlugins'][string] = {
         id: `${PLUGIN_ID}.plugin.name`,
         defaultMessage: PLUGIN_ID,
       },
-      permissions: [],
+      permissions: pluginPermissions.dashboard,
       Component: () => import('./pages/App'),
     });
 
@@ -36,7 +39,7 @@ const plugin: StrapiApp['appPlugins'][string] = {
         defaultMessage: PLUGIN_ID,
       },
       Component: () => import('./pages/Settings'),
-      permissions: [],
+      permissions: pluginPermissions.settings,
     });
   },
 

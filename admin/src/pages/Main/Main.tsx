@@ -35,7 +35,7 @@ import {
   DatePicker,
 } from '@strapi/design-system';
 import { Flex } from '@strapi/design-system';
-import { Pencil, Plus, Check, Clock } from '@strapi/icons';
+import { Pencil, Plus, Check } from '@strapi/icons';
 
 // Types
 type EventType = 'page_view' | 'click' | 'custom';
@@ -45,8 +45,6 @@ interface AnalyticsData {
   timestamp: string;
   [key: string]: any;
 }
-
-const LOCAL_STORAGE_KEY = 'strapi-analytics-layout';
 
 const WIDGET_DEFAULTS: Record<string, Partial<Widget> & { title?: string }> = {
   datacard: { colSpan: 3, rowSpan: 5, title: 'New Metric Card' },
@@ -119,7 +117,9 @@ const MainPage = () => {
       setLayout((prev) => {
         const newLayout = prev.map((w) => (w.id === id ? { ...w, ...updates } : w));
         // optimistic save
-        saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: newLayout }).catch(console.error);
+        saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: newLayout }).catch(
+          console.error
+        );
 
         return newLayout;
       });
@@ -135,7 +135,9 @@ const MainPage = () => {
     (id: string) => {
       setLayout((prev) => {
         const newLayout = prev.filter((w) => w.id !== id);
-        saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: newLayout }).catch(console.error);
+        saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: newLayout }).catch(
+          console.error
+        );
 
         return newLayout;
       });
@@ -166,7 +168,9 @@ const MainPage = () => {
 
       setLayout((prev) => {
         const newLayout = compactLayout([...prev, newWidget]);
-        saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: newLayout }).catch(console.error);
+        saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: newLayout }).catch(
+          console.error
+        );
 
         return newLayout;
       });
@@ -295,11 +299,13 @@ const MainPage = () => {
             </Box>
           )}
 
-            <WidgetGrid
+          <WidgetGrid
             layout={layout}
             onChangeLayout={(l) => {
               setLayout(l);
-              saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: l }).catch(console.error);
+              saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: l }).catch(
+                console.error
+              );
             }}
             editMode={editMode}
             metrics={METRICS}
