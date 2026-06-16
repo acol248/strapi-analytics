@@ -57,6 +57,10 @@
     "displayName": "Strapi Analytics",
     "description": "A simple analytics plugin for Strapi."
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/acol248/strapi-analytics.git"
+  },
   "name": "strapi-analytics",
   "description": "A simple analytics plugin for Strapi.",
   "license": "MIT",
