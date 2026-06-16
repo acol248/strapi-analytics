@@ -22,7 +22,6 @@ npm install strapi-analytics
 ...
 "strapi-analytics": {
   enabled: true,
-  resolve: "./src/plugins/strapi-analytics",
 },
 ...
 ```
@@ -124,7 +123,7 @@ sana(
 - [ ] Add more graph types to dashboards.
 - [x] ~~Add better time scale adjustments to dashboards.~~
 - [ ] Add export features.
-- [ ] npm installation method.
+- [x] ~~npm installation method.~~
 - [ ] Move as much logic as possible server side.
 
 Please feel free to suggest further features for the roadmap.
