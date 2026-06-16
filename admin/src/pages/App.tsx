@@ -13,7 +13,7 @@ import MainPage from './Main';
 
 // Strapi
 import { Layouts, Page, SubNav } from '@strapi/strapi/admin';
-import { Flex } from '@strapi/design-system';
+import { Divider, Flex } from '@strapi/design-system';
 
 const App = () => {
   const { formatMessage } = useIntl();
@@ -32,6 +32,8 @@ const App = () => {
       sideNav={
         <SubNav.Main>
           <SubNav.Header label={formatMessage({ id: getTranslation('plugin.name') })} />
+
+          <Divider marginBottom={4} />
 
           <SubNav.Content>
             <Flex direction="column" gap={2} paddingLeft={2} paddingRight={2} paddingBottom={4}>
