@@ -37,13 +37,7 @@ Paste the following snippet into the <head> of your website's HTML layout. This 
     a.async = 1;
     a.src = o;
     m.parentNode.insertBefore(a, m);
-  })(
-    window,
-    document,
-    'script',
-    'https://your-strapi-domain.com/api/strapi-analytics/tracker.js',
-    'sana'
-  );
+  })(window, document, 'script', 'https://your-strapi-domain.com/api/strapi-analytics/tracker.js', 'sana');
 
   sana('init', 'S-XXXXXXXXXXX'); // replace this with a code generated in your CMS
   sana('pageview');
@@ -111,9 +105,11 @@ sana(
 - [x] ~~Save dashboard layouts against the user in the database.~~
 - [x] ~~Ensure RBAC is setup and used appropriately.~~
 - [ ] Add drilled down layers that allow for granular tracking - ~~track the CT, the documentId~~, how data in the document is interacted with.
+- [ ] Make the graphs and associated functions more generalised where necessary (in progress)
 - [ ] Add more graph types to dashboards.
 - [x] ~~Add better time scale adjustments to dashboards.~~
 - [ ] Add export features.
 - [ ] npm installation method.
+- [ ] Move as much logic as possible server side.
 
 Please feel free to suggest further features for the roadmap.
