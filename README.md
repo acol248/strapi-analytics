@@ -10,8 +10,13 @@ A standalone anonymous analytics plugin for Strapi CMS.
 
 ### Installing Plugin
 
-Installation via npm coming soon...  
-For now, copy plugin files to Strapi plugins folder and add the following to your plugins file.
+Run the following command
+
+```bash
+npm install strapi-analytics
+```
+
+...and paste the following into your `plugins.ts` file.
 
 ```
 ...
