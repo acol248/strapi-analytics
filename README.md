@@ -6,6 +6,8 @@ A standalone anonymous analytics plugin for Strapi CMS.
 
 ## Getting Started
 
+> Note: This plugin is currently in active development and offers a minimal feature set. Expect frequent updates and potential breaking changes as it matures.
+
 ### Installing Plugin
 
 Installation via npm coming soon...  
@@ -39,7 +41,13 @@ Paste the following snippet into the <head> of your website's HTML layout. This 
     a.async = 1;
     a.src = o;
     m.parentNode.insertBefore(a, m);
-  })(window, document, 'script', 'https://your-strapi-domain.com/api/strapi-analytics/tracker.js', 'sana');
+  })(
+    window,
+    document,
+    'script',
+    'https://your-strapi-domain.com/api/strapi-analytics/tracker.js',
+    'sana'
+  );
 
   sana('init', 'S-XXXXXXXXXXX'); // replace this with a code generated in your CMS
   sana('pageview');
