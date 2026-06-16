@@ -19,21 +19,13 @@ import {
   startTime,
   endTime,
   deriveScale,
+  getLocale,
 } from '../../helpers';
 import { getLayouts, saveLayout } from '../../helpers/request';
 
 // Strapi
 import { Layouts } from '@strapi/strapi/admin';
-import {
-  Main,
-  Box,
-  Typography,
-  IconButton,
-  Button,
-  SimpleMenu,
-  MenuItem,
-  DatePicker,
-} from '@strapi/design-system';
+import { Main, Box, Typography, IconButton, Button, SimpleMenu, MenuItem, DatePicker } from '@strapi/design-system';
 import { Flex } from '@strapi/design-system';
 import { Pencil, Plus, Check } from '@strapi/icons';
 
@@ -99,6 +91,7 @@ const MainPage = () => {
   const { formatMessage } = useIntl();
   const { uid } = useParams();
   const theme = useTheme();
+  const locale = getLocale();
 
   const [displayName, setDisplayName] = useState<string | undefined>(undefined);
   const [data, setData] = useState<AnalyticsData[]>([]);
@@ -117,9 +110,7 @@ const MainPage = () => {
       setLayout((prev) => {
         const newLayout = prev.map((w) => (w.id === id ? { ...w, ...updates } : w));
         // optimistic save
-        saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: newLayout }).catch(
-          console.error
-        );
+        saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: newLayout }).catch(console.error);
 
         return newLayout;
       });
@@ -135,9 +126,7 @@ const MainPage = () => {
     (id: string) => {
       setLayout((prev) => {
         const newLayout = prev.filter((w) => w.id !== id);
-        saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: newLayout }).catch(
-          console.error
-        );
+        saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: newLayout }).catch(console.error);
 
         return newLayout;
       });
@@ -168,9 +157,7 @@ const MainPage = () => {
 
       setLayout((prev) => {
         const newLayout = compactLayout([...prev, newWidget]);
-        saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: newLayout }).catch(
-          console.error
-        );
+        saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: newLayout }).catch(console.error);
 
         return newLayout;
       });
@@ -238,6 +225,7 @@ const MainPage = () => {
             <Flex gap={1} maxWidth="300px" alignItems="center">
               <DatePicker
                 size="S"
+                locale={locale}
                 initialDate={startDate}
                 maxDate={endDate}
                 onChange={(d) => d && setStartDate(d)}
@@ -245,6 +233,7 @@ const MainPage = () => {
               <span>-</span>
               <DatePicker
                 size="S"
+                locale={locale}
                 initialDate={endDate}
                 minDate={startDate}
                 maxDate={new Date()}
@@ -303,9 +292,7 @@ const MainPage = () => {
             layout={layout}
             onChangeLayout={(l) => {
               setLayout(l);
-              saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: l }).catch(
-                console.error
-              );
+              saveLayout({ isGlobal: !uid, modelUid: uid || undefined, layout: l }).catch(console.error);
             }}
             editMode={editMode}
             metrics={METRICS}
@@ -323,11 +310,15 @@ const MainPage = () => {
                     .map((d) => ({ x: d.timestamp, y: 1 }));
 
                   const usedScale = deriveScale(startDate, endDate);
+                  if (!usedScale) {
+                    return <Typography>{formatMessage({ id: getTranslation('dashboard.chart.no-scale') })}</Typography>;
+                  }
+
                   const quantity = startTime(usedScale, startDate, endDate);
                   const anchor = endTime(usedScale, endDate);
                   const padded = padTimeSeries(rawChartPoints, usedScale, quantity, anchor);
 
-                  return <AreaGraph label={w.title} data={padded} />;
+                  return <AreaGraph label={w.title} data={padded} scale={usedScale} />;
                 },
               };
 
