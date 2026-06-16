@@ -2,7 +2,7 @@
 
 A standalone anonymous analytics plugin for Strapi CMS.
 
-![Dashboard screenshot]('./screenshots/screenshot-3.jpg')
+![Dashboard screenshot](./screenshots/screenshot-3.jpg)
 
 ## Getting Started
 
