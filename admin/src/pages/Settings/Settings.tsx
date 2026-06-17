@@ -11,21 +11,28 @@ import pluginPermissions from '../../permissions';
 
 // Strapi
 import { Box, Button, Field, Main } from '@strapi/design-system';
-import { Layouts, useRBAC } from '@strapi/strapi/admin';
+import { Layouts, Page, useRBAC } from '@strapi/strapi/admin';
 
 const SettingsPage = () => {
   const perm = useRBAC(pluginPermissions);
 
   const { formatMessage } = useIntl();
 
+  const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState<{ code: string } | null>(null);
 
   // get page data
   useEffect(() => {
     if (!perm.allowedActions.canRead) return;
 
-    getCode().then(setData).catch(console.error);
+    getCode()
+      .then(setData)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [perm.allowedActions.canRead]);
+
+  // return loading state whilst fetching data
+  if (loading) return <Page.Loading />;
 
   return (
     <Layouts.Root>
@@ -62,4 +69,10 @@ const SettingsPage = () => {
   );
 };
 
-export default SettingsPage;
+const ProtectedSettingsPage = () => (
+  <Page.Protect permissions={pluginPermissions.settings}>
+    <SettingsPage />
+  </Page.Protect>
+);
+
+export default ProtectedSettingsPage;
