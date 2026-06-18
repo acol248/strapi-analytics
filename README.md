@@ -125,5 +125,7 @@ sana(
 - [ ] Add export features.
 - [x] ~~npm installation method.~~
 - [ ] Move as much logic as possible server side.
+- [ ] Redesign current card types
+- [ ] Make the items that can be added to dashboards work as widgets for use on Strapi homepage
 
 Please feel free to suggest further features for the roadmap.
