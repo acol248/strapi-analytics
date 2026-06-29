@@ -60,7 +60,7 @@ export const StyledWidgetItem = styled.div.attrs<StyledWidgetItemProps>((props) 
   min-height: ${ROW_HEIGHT}px;
   transition: ${({ $isDragging, $isResizing }) =>
     $isDragging || $isResizing ? 'none' : 'all 250ms cubic-bezier(0.2, 0.8, 0.2, 1)'};
-  z-index: ${({ $isDragging }) => ($isDragging ? 100 : 2)};
+  z-index: ${({ $isDragging, $isResizing }) => ($isDragging || $isResizing ? 100 : 1)};
   border-radius: ${({ theme }) => theme.borderRadius};
   overflow: visible;
 
