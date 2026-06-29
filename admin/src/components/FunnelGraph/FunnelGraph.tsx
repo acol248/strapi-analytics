@@ -10,16 +10,12 @@ import { Box, Flex, Typography } from '@strapi/design-system';
 // Styles
 import { StyledFunnelGraph } from './FunnelGraph.style';
 
-// Types
-import { AnalyticsData } from '../PieGraph/PieGraph';
-
 // Utils
 import { getTranslation } from '../../utils/getTranslation';
 
 export interface Props {
   label: string;
-  metric: string;
-  data: AnalyticsData[];
+  data: { name: string; value: number; percent: number }[];
 }
 
 const FunnelTooltip = ({ active, payload }: any) => {
@@ -51,28 +47,11 @@ const FunnelTooltip = ({ active, payload }: any) => {
   );
 };
 
-const FunnelGraph = ({ label, metric, data }: Props) => {
+const FunnelGraph = ({ label, data }: Props) => {
   const theme = useTheme();
   const { formatMessage } = useIntl();
 
-  const filteredData = data.filter((item) => metric === 'all' || item.action === metric);
-  const groupKey = metric === 'all' ? 'action' : 'url';
-
-  const counts: Record<string, number> = {};
-  filteredData.forEach((item) => {
-    const value = item[groupKey] || 'Unknown';
-    counts[value] = (counts[value] || 0) + 1;
-  });
-
-  const sortedEntries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-
-  const totalMax = sortedEntries.length > 0 ? sortedEntries[0][1] : 1;
-
-  const funnelData = sortedEntries.slice(0, 5).map(([name, value]) => ({
-    name,
-    value,
-    percent: totalMax > 0 ? (value / totalMax) * 100 : 0,
-  }));
+  const funnelData = data || [];
 
   const COLORS = [
     theme.colors.primary600,

@@ -40,6 +40,42 @@ export const getData = async (query: Record<string, any> = {}, start?: Date, end
 };
 
 /**
+ * Helper function to fetch formatted dashboard analytic summaries from the backend
+ * @param layout list of widgets
+ * @param start start date
+ * @param end end date
+ * @param uid optional content type UID
+ * @returns preformatted data for widgets
+ */
+export const getDashboardData = async (
+  layout: any[],
+  start: Date,
+  end: Date,
+  uid?: string
+) => {
+  const token = getToken();
+
+  const res = await fetch(`/strapi-analytics/data/dashboard`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      layout,
+      start: start.toISOString(),
+      end: end.toISOString(),
+      uid,
+    }),
+  });
+
+  if (!res.ok) throw new Error('Failed to fetch dashboard data.');
+
+  const data = await res.json();
+  return data;
+};
+
+/**
  * Helper function to fetch content types from the backend
  * @returns list of content types
  */

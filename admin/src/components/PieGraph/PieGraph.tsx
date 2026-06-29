@@ -14,16 +14,9 @@ import { StyledPieGraph } from './PieGraph.style';
 import { getTranslation } from '../../utils/getTranslation';
 
 // Types
-export interface AnalyticsData {
-  action: string;
-  timestamp: string;
-  [key: string]: any;
-}
-
 export interface Props {
   label: string;
-  metric: string;
-  data: AnalyticsData[];
+  data: { name: string; value: number }[];
 }
 
 const PieGraphTooltip = ({ active, payload }: any) => {
@@ -52,30 +45,11 @@ const PieGraphTooltip = ({ active, payload }: any) => {
   );
 };
 
-const PieGraph = ({ label, metric, data }: Props) => {
+const PieGraph = ({ label, data }: Props) => {
   const theme = useTheme();
   const { formatMessage } = useIntl();
 
-  const filteredData = data.filter((item) => metric === 'all' || item.action === metric);
-  const groupKey = metric === 'all' ? 'action' : 'url';
-
-  const counts: Record<string, number> = {};
-  filteredData.forEach((item) => {
-    const value = item[groupKey] || 'Unknown';
-    counts[value] = (counts[value] || 0) + 1;
-  });
-
-  const sortedEntries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-
-  let pieData: { name: string; value: number }[] = [];
-  if (sortedEntries.length <= 6) {
-    pieData = sortedEntries.map(([name, value]) => ({ name, value }));
-  } else {
-    const topEntries = sortedEntries.slice(0, 5);
-    const otherCount = sortedEntries.slice(5).reduce((acc, curr) => acc + curr[1], 0);
-    pieData = topEntries.map(([name, value]) => ({ name, value }));
-    pieData.push({ name: 'Other', value: otherCount });
-  }
+  const pieData = data || [];
 
   const COLORS = [
     theme.colors.primary600,

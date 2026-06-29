@@ -10,6 +10,14 @@ export default () => ({
       },
     },
     {
+      method: 'POST',
+      path: '/data/dashboard',
+      handler: 'controller.getDashboardData',
+      config: {
+        policies: [],
+      },
+    },
+    {
       method: 'GET',
       path: '/display-name/:uid',
       handler: 'controller.getDisplayName',

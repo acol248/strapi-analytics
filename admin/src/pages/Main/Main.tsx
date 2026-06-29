@@ -16,12 +16,8 @@ import { useTheme } from 'styled-components';
 import { getTranslation } from '../../utils/getTranslation';
 import {
   generateId,
-  getData,
+  getDashboardData,
   getUIDName,
-  padTimeSeries,
-  startTime,
-  endTime,
-  deriveScale,
   getLocale,
 } from '../../helpers';
 import { getLayouts, saveLayout } from '../../helpers/request';
@@ -31,15 +27,6 @@ import { Layouts } from '@strapi/strapi/admin';
 import { Main, Box, Typography, IconButton, Button, SimpleMenu, MenuItem, DatePicker } from '@strapi/design-system';
 import { Flex } from '@strapi/design-system';
 import { Pencil, Plus, Check } from '@strapi/icons';
-
-// Types
-type EventType = 'page_view' | 'click' | 'custom';
-
-interface AnalyticsData {
-  action: EventType | string;
-  timestamp: string;
-  [key: string]: any;
-}
 
 const WIDGET_DEFAULTS: Record<string, Partial<Widget> & { title?: string }> = {
   datacard: { colSpan: 3, rowSpan: 5, title: 'New Metric Card' },
@@ -100,7 +87,7 @@ const MainPage = () => {
   const locale = getLocale();
 
   const [displayName, setDisplayName] = useState<string | undefined>(undefined);
-  const [data, setData] = useState<AnalyticsData[]>([]);
+  const [dashboardData, setDashboardData] = useState<Record<string, any>>({});
   const [startDate, setStartDate] = useState<Date>(new Date(Date.now() - 7 * 864e5));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [editMode, setEditMode] = useState<boolean>(false);
@@ -171,17 +158,6 @@ const MainPage = () => {
     [layout, uid]
   );
 
-  /**
-   * Compute the value for a given metric based on the current data
-   * @param metric metric to compute value for
-   * @returns the count of events for the given metric, or total events if 'all' is selected
-   */
-  const computeMetricValue = (metric: string) => {
-    if (metric === 'all') return data.length;
-
-    return data.filter((item) => item.action === metric).length;
-  };
-
   // Load layout from backend on mount
   useEffect(() => {
     let mounted = true;
@@ -214,13 +190,23 @@ const MainPage = () => {
       .catch(console.error);
   }, [uid]);
 
-  // Get analytics data
+  // Get analytic summary data
   useEffect(() => {
-    const options: Record<string, string | number> = { type: 'full' };
-    if (uid) options.uid = uid;
+    let mounted = true;
 
-    getData(options, startDate, endDate).then(setData).catch(console.error);
-  }, [uid, startDate, endDate]);
+    getDashboardData(layout, startDate, endDate, uid || undefined)
+      .then((res) => {
+        if (!mounted) return;
+        setDashboardData(res.widgetData || {});
+      })
+      .catch((err) => {
+        console.error('Failed to load dashboard data:', err);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [layout, uid, startDate, endDate]);
 
   return (
     <>
@@ -314,48 +300,30 @@ const MainPage = () => {
             onUpdateWidget={updateWidget}
             onDeleteWidget={deleteWidget}
             renderWidget={(widget) => {
+              const widgetPayload = dashboardData[widget.id] || {};
+
               const renderers: Record<string, (w: Widget) => JSX.Element | null> = {
                 datacard: (w) => {
-                  const cardValue = computeMetricValue(w.metric);
+                  const cardValue = widgetPayload.value !== undefined ? widgetPayload.value : 0;
                   return <DataCard label={w.title} value={cardValue} />;
                 },
                 area_chart: (w) => {
-                  const rawChartPoints = data
-                    .filter((item) => item.action === w.metric || w.metric === 'all')
-                    .map((d) => ({ x: d.timestamp, y: 1 }));
-
-                  const usedScale = deriveScale(startDate, endDate);
-                  if (!usedScale) {
-                    return <Typography>{formatMessage({ id: getTranslation('dashboard.chart.no-scale') })}</Typography>;
-                  }
-
-                  const quantity = startTime(usedScale, startDate, endDate);
-                  const anchor = endTime(usedScale, endDate);
-                  const padded = padTimeSeries(rawChartPoints, usedScale, quantity, anchor);
-
-                  return <AreaGraph label={w.title} data={padded} scale={usedScale} />;
+                  const chartData = widgetPayload.data || [];
+                  const scale = widgetPayload.scale;
+                  return <AreaGraph label={w.title} data={chartData} scale={scale} />;
                 },
                 bar_chart: (w) => {
-                  const rawChartPoints = data
-                    .filter((item) => item.action === w.metric || w.metric === 'all')
-                    .map((d) => ({ x: d.timestamp, y: 1 }));
-
-                  const usedScale = deriveScale(startDate, endDate);
-                  if (!usedScale) {
-                    return <Typography>{formatMessage({ id: getTranslation('dashboard.chart.no-scale') })}</Typography>;
-                  }
-
-                  const quantity = startTime(usedScale, startDate, endDate);
-                  const anchor = endTime(usedScale, endDate);
-                  const padded = padTimeSeries(rawChartPoints, usedScale, quantity, anchor);
-
-                  return <BarGraph label={w.title} data={padded} scale={usedScale} />;
+                  const chartData = widgetPayload.data || [];
+                  const scale = widgetPayload.scale;
+                  return <BarGraph label={w.title} data={chartData} scale={scale} />;
                 },
                 pie_chart: (w) => {
-                  return <PieGraph label={w.title} metric={w.metric} data={data} />;
+                  const pieData = widgetPayload.data || [];
+                  return <PieGraph label={w.title} data={pieData} />;
                 },
                 funnel_chart: (w) => {
-                  return <FunnelGraph label={w.title} metric={w.metric} data={data} />;
+                  const funnelData = widgetPayload.data || [];
+                  return <FunnelGraph label={w.title} data={funnelData} />;
                 },
               };
 
