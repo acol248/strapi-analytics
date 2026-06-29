@@ -20,7 +20,7 @@ export interface Props {
 const DataCard = ({ label, value }: Props) => {
   return (
     <StyledDataCard>
-      <Typography variant="delta" fontWeight="bold" marginBottom={2}>
+      <Typography className="overview-card__label" variant="delta">
         {label}
       </Typography>
       <Typography className="overview-card__content" variant="alpha">
