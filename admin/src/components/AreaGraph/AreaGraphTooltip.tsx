@@ -26,7 +26,15 @@ const AreaGraphTooltip = ({ active, label, payload }: AreaGraphTooltipProps) => 
     typeof label === 'number' || typeof label === 'string' ? new Date(label as any).toLocaleString('en-GB') : '';
 
   return (
-    <Box padding={3} background={theme.colors.neutral0} shadow="popupShadow" borderRadius={theme.borderRadius}>
+    <Box
+      padding={3}
+      background="neutral0"
+      borderColor="neutral150"
+      borderStyle="solid"
+      borderWidth="1px"
+      shadow="popupShadow"
+      borderRadius={theme.borderRadius}
+    >
       <Flex direction="column" alignItems="start" gap={1}>
         <Typography variant="pi" textColor="neutral600">{dateLabel}</Typography>
         <Typography variant="omega" textColor="primary600" fontWeight="bold">

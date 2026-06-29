@@ -1,4 +1,4 @@
-import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
+import { Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 // Hooks
 import { useTheme } from 'styled-components';
@@ -29,7 +29,10 @@ const PieGraphTooltip = ({ active, payload }: any) => {
   return (
     <Box
       padding={3}
-      background={theme.colors.neutral0}
+      background="neutral0"
+      borderColor="neutral150"
+      borderStyle="solid"
+      borderWidth="1px"
       shadow="popupShadow"
       borderRadius={theme.borderRadius}
     >
@@ -49,8 +52,6 @@ const PieGraph = ({ label, data }: Props) => {
   const theme = useTheme();
   const { formatMessage } = useIntl();
 
-  const pieData = data || [];
-
   const COLORS = [
     theme.colors.primary600,
     theme.colors.secondary600,
@@ -60,10 +61,17 @@ const PieGraph = ({ label, data }: Props) => {
     theme.colors.neutral600,
   ];
 
+  const pieData = (data || []).map((item, index) => ({
+    ...item,
+    fill: COLORS[index % COLORS.length],
+  }));
+
   if (pieData.length === 0) {
     return (
       <StyledPieGraph>
-        <Typography>{label}</Typography>
+        <Typography variant="delta" fontWeight="bold" textColor="neutral800">
+          {label}
+        </Typography>
         <Flex flex={1} alignItems="center" justifyContent="center">
           <Typography textColor="neutral600">
             {formatMessage({ id: getTranslation('components.graph.no-data') })}
@@ -75,7 +83,9 @@ const PieGraph = ({ label, data }: Props) => {
 
   return (
     <StyledPieGraph>
-      <Typography>{label}</Typography>
+      <Typography variant="delta" fontWeight="bold" textColor="neutral800">
+        {label}
+      </Typography>
       <div className="pie-container">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -87,11 +97,9 @@ const PieGraph = ({ label, data }: Props) => {
               outerRadius={75}
               paddingAngle={3}
               dataKey="value"
-            >
-              {pieData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
+              stroke={theme.colors.neutral0}
+              strokeWidth={2}
+            />
             <Tooltip content={<PieGraphTooltip />} />
             <Legend
               iconType="circle"
@@ -99,7 +107,7 @@ const PieGraph = ({ label, data }: Props) => {
               verticalAlign="middle"
               align="right"
               wrapperStyle={{
-                fontSize: '12px',
+                fontSize: theme.fontSizes[1] || '12px',
                 paddingLeft: '10px',
                 maxWidth: '50%',
                 overflow: 'hidden',

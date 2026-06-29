@@ -1,4 +1,4 @@
-import { Cell, Funnel, FunnelChart, LabelList, ResponsiveContainer, Tooltip } from 'recharts';
+import { Funnel, FunnelChart, LabelList, ResponsiveContainer, Tooltip } from 'recharts';
 
 // Hooks
 import { useTheme } from 'styled-components';
@@ -26,7 +26,10 @@ const FunnelTooltip = ({ active, payload }: any) => {
   return (
     <Box
       padding={3}
-      background={theme.colors.neutral0}
+      background="neutral0"
+      borderColor="neutral150"
+      borderStyle="solid"
+      borderWidth="1px"
       shadow="popupShadow"
       borderRadius={theme.borderRadius}
     >
@@ -51,8 +54,6 @@ const FunnelGraph = ({ label, data }: Props) => {
   const theme = useTheme();
   const { formatMessage } = useIntl();
 
-  const funnelData = data || [];
-
   const COLORS = [
     theme.colors.primary600,
     theme.colors.secondary600,
@@ -61,10 +62,17 @@ const FunnelGraph = ({ label, data }: Props) => {
     theme.colors.danger600,
   ];
 
+  const funnelData = (data || []).map((item, index) => ({
+    ...item,
+    fill: COLORS[index % COLORS.length],
+  }));
+
   if (funnelData.length === 0) {
     return (
       <StyledFunnelGraph>
-        <Typography>{label}</Typography>
+        <Typography variant="delta" fontWeight="bold" textColor="neutral800">
+          {label}
+        </Typography>
         <Flex flex={1} alignItems="center" justifyContent="center">
           <Typography textColor="neutral600">
             {formatMessage({ id: getTranslation('components.graph.no-data') })}
@@ -76,22 +84,24 @@ const FunnelGraph = ({ label, data }: Props) => {
 
   return (
     <StyledFunnelGraph>
-      <Typography>{label}</Typography>
+      <Typography variant="delta" fontWeight="bold" textColor="neutral800">
+        {label}
+      </Typography>
       <div className="funnel-container">
         <ResponsiveContainer width="100%" height="90%">
           <FunnelChart margin={{ top: 10, right: 100, left: 10, bottom: 10 }}>
             <Tooltip content={<FunnelTooltip />} />
-            <Funnel dataKey="value" data={funnelData} isAnimationActive>
+            <Funnel dataKey="value" data={funnelData} isAnimationActive stroke={theme.colors.neutral0} strokeWidth={6}>
               <LabelList
                 position="right"
                 dataKey="name"
-                fill={theme.colors.neutral800}
+                fill={theme.colors.neutral700}
                 stroke="none"
-                style={{ fontSize: '11px', fontWeight: 'bold' }}
+                style={{
+                  fontSize: theme.fontSizes[1] || '12px',
+                  fontWeight: theme.fontWeights.semiBold || '500',
+                }}
               />
-              {funnelData.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
             </Funnel>
           </FunnelChart>
         </ResponsiveContainer>

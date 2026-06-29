@@ -27,13 +27,16 @@ export interface Props {
 const BarGraph = ({ label, data, scale }: Props) => {
   const theme = useTheme();
   const locale = getLocale();
+  const borderRadius = parseInt(theme.borderRadius, 10) || 4;
 
   return (
     <StyledBarGraph>
-      <Typography>{label}</Typography>
+      <Typography variant="delta" fontWeight="bold" textColor="neutral800">
+        {label}
+      </Typography>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 12, right: 16, left: -32, bottom: -4 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.neutral200} />
+          <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.neutral150} />
 
           <XAxis
             dataKey="x"
@@ -71,7 +74,7 @@ const BarGraph = ({ label, data, scale }: Props) => {
           />
 
           <YAxis
-            tick={{ fill: theme.colors.neutral600, fontSize: `${theme.fontSizes[2]}px` }}
+            tick={{ fill: theme.colors.neutral600, fontSize: 11 }}
             axisLine={false}
             tickLine={false}
           />
@@ -82,8 +85,8 @@ const BarGraph = ({ label, data, scale }: Props) => {
             dataKey="y"
             name="Events"
             fill={theme.colors.primary600}
-            radius={[4, 4, 0, 0]}
-            activeBar={<Rectangle fill={theme.colors.primary700} radius={[4, 4, 0, 0]} />}
+            radius={[borderRadius, borderRadius, 0, 0]}
+            activeBar={<Rectangle fill={theme.colors.primary700} radius={[borderRadius, borderRadius, 0, 0]} />}
           />
         </BarChart>
       </ResponsiveContainer>
