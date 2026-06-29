@@ -120,11 +120,10 @@ sana(
 - [x] ~~Ensure RBAC is setup and used appropriately.~~
 - [ ] Add drilled down layers that allow for granular tracking - ~~track the CT, the documentId~~, how data in the document is interacted with.
 - [ ] Make the graphs and associated functions more generalised where necessary (in progress)
-- [ ] Add more graph types to dashboards.
+- [x] ~~Add more graph types to dashboards.~~
 - [x] ~~Add better time scale adjustments to dashboards.~~
 - [ ] Add export features.
 - [x] ~~npm installation method.~~
-- [ ] Move as much logic as possible server side.
 - [ ] Redesign current card types
 - [ ] Make the items that can be added to dashboards work as widgets for use on Strapi homepage
 
