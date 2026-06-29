@@ -427,6 +427,35 @@ export const WidgetGrid = ({
                         <Field.Root>
                           <Field.Label>
                             <Typography variant="pi" fontWeight="bold">
+                              {formatMessage({ id: getTranslation('components.widget-grid.widget-type') })}
+                            </Typography>
+                          </Field.Label>
+                          <SingleSelect
+                            size="S"
+                            value={widget.type}
+                            onChange={(v) => onUpdateWidget(widget.id, { type: v as string })}
+                          >
+                            <SingleSelectOption value="datacard">
+                              {formatMessage({ id: getTranslation('components.widget-grid.widget-type.datacard') })}
+                            </SingleSelectOption>
+                            <SingleSelectOption value="area_chart">
+                              {formatMessage({ id: getTranslation('components.widget-grid.widget-type.area_chart') })}
+                            </SingleSelectOption>
+                            <SingleSelectOption value="bar_chart">
+                              {formatMessage({ id: getTranslation('components.widget-grid.widget-type.bar_chart') })}
+                            </SingleSelectOption>
+                            <SingleSelectOption value="pie_chart">
+                              {formatMessage({ id: getTranslation('components.widget-grid.widget-type.pie_chart') })}
+                            </SingleSelectOption>
+                            <SingleSelectOption value="funnel_chart">
+                              {formatMessage({ id: getTranslation('components.widget-grid.widget-type.funnel_chart') })}
+                            </SingleSelectOption>
+                          </SingleSelect>
+                        </Field.Root>
+
+                        <Field.Root>
+                          <Field.Label>
+                            <Typography variant="pi" fontWeight="bold">
                               {formatMessage({ id: getTranslation('components.widget-grid.widget-title') })}
                             </Typography>
                           </Field.Label>

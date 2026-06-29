@@ -1,6 +1,9 @@
 // Components
 import { WidgetGrid, Widget, compactLayout } from '../../components/WidgetGrid';
 import AreaGraph from '../../components/AreaGraph';
+import BarGraph from '../../components/BarGraph';
+import PieGraph from '../../components/PieGraph';
+import FunnelGraph from '../../components/FunnelGraph';
 import DataCard from '../../components/DataCard';
 
 // Hooks
@@ -40,7 +43,10 @@ interface AnalyticsData {
 
 const WIDGET_DEFAULTS: Record<string, Partial<Widget> & { title?: string }> = {
   datacard: { colSpan: 3, rowSpan: 5, title: 'New Metric Card' },
-  chart: { colSpan: 6, rowSpan: 5, title: 'New Chart' },
+  area_chart: { colSpan: 6, rowSpan: 5, title: 'New Area Chart' },
+  bar_chart: { colSpan: 6, rowSpan: 5, title: 'New Bar Chart' },
+  pie_chart: { colSpan: 6, rowSpan: 5, title: 'New Pie Chart' },
+  funnel_chart: { colSpan: 6, rowSpan: 5, title: 'New Funnel Chart' },
 };
 
 const DEFAULT_LAYOUT: Widget[] = [
@@ -66,7 +72,7 @@ const DEFAULT_LAYOUT: Widget[] = [
   },
   {
     id: generateId(),
-    type: 'chart',
+    type: 'area_chart',
     metric: 'page_view',
     title: 'Page Views',
     colStart: 1,
@@ -275,8 +281,17 @@ const MainPage = () => {
                     <MenuItem onSelect={() => addWidget('datacard')}>
                       {formatMessage({ id: getTranslation('dashboard.add-widget.data-card') })}
                     </MenuItem>
-                    <MenuItem onSelect={() => addWidget('chart')}>
-                      {formatMessage({ id: getTranslation('dashboard.add-widget.chart') })}
+                    <MenuItem onSelect={() => addWidget('area_chart')}>
+                      {formatMessage({ id: getTranslation('dashboard.add-widget.area-chart') })}
+                    </MenuItem>
+                    <MenuItem onSelect={() => addWidget('bar_chart')}>
+                      {formatMessage({ id: getTranslation('dashboard.add-widget.bar-chart') })}
+                    </MenuItem>
+                    <MenuItem onSelect={() => addWidget('pie_chart')}>
+                      {formatMessage({ id: getTranslation('dashboard.add-widget.pie-chart') })}
+                    </MenuItem>
+                    <MenuItem onSelect={() => addWidget('funnel_chart')}>
+                      {formatMessage({ id: getTranslation('dashboard.add-widget.funnel-chart') })}
                     </MenuItem>
                   </SimpleMenu>
 
@@ -304,7 +319,7 @@ const MainPage = () => {
                   const cardValue = computeMetricValue(w.metric);
                   return <DataCard label={w.title} value={cardValue} />;
                 },
-                chart: (w) => {
+                area_chart: (w) => {
                   const rawChartPoints = data
                     .filter((item) => item.action === w.metric || w.metric === 'all')
                     .map((d) => ({ x: d.timestamp, y: 1 }));
@@ -319,6 +334,28 @@ const MainPage = () => {
                   const padded = padTimeSeries(rawChartPoints, usedScale, quantity, anchor);
 
                   return <AreaGraph label={w.title} data={padded} scale={usedScale} />;
+                },
+                bar_chart: (w) => {
+                  const rawChartPoints = data
+                    .filter((item) => item.action === w.metric || w.metric === 'all')
+                    .map((d) => ({ x: d.timestamp, y: 1 }));
+
+                  const usedScale = deriveScale(startDate, endDate);
+                  if (!usedScale) {
+                    return <Typography>{formatMessage({ id: getTranslation('dashboard.chart.no-scale') })}</Typography>;
+                  }
+
+                  const quantity = startTime(usedScale, startDate, endDate);
+                  const anchor = endTime(usedScale, endDate);
+                  const padded = padTimeSeries(rawChartPoints, usedScale, quantity, anchor);
+
+                  return <BarGraph label={w.title} data={padded} scale={usedScale} />;
+                },
+                pie_chart: (w) => {
+                  return <PieGraph label={w.title} metric={w.metric} data={data} />;
+                },
+                funnel_chart: (w) => {
+                  return <FunnelGraph label={w.title} metric={w.metric} data={data} />;
                 },
               };
 
